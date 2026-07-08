@@ -302,3 +302,29 @@ td {
   max-width: 100%;
   min-height: 48px;
 }
+.panel-header-tabla {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.panel-header-tabla h2 {
+  margin: 0;
+}
+
+.panel-header-tabla p {
+  margin: 6px 0 0;
+  color: #6b7280;
+}
+
+.acciones-tabla {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.tabla-contenedor {
+  margin-top: 10px;
+}

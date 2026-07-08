@@ -17,8 +17,8 @@ export function escucharClasesDelUsuario(uid, callback) {
 
   return onSnapshot(consulta, (snapshot) => {
     const clases = snapshot.docs.map((documento) => ({
-      id: documento.id,
       ...documento.data(),
+      id: documento.id,
     }));
 
     callback(clases);
@@ -26,8 +26,12 @@ export function escucharClasesDelUsuario(uid, callback) {
 }
 
 export async function agregarClaseFirestore(clase, usuario) {
+  const datosClase = { ...clase };
+
+  delete datosClase.id;
+
   await addDoc(coleccionClases, {
-    ...clase,
+    ...datosClase,
     creadoPor: usuario.uid,
     correoUsuario: usuario.email,
     fechaCreacion: new Date().toISOString(),
@@ -35,5 +39,5 @@ export async function agregarClaseFirestore(clase, usuario) {
 }
 
 export async function eliminarClaseFirestore(id) {
-  await deleteDoc(doc(db, "clases", id));
+  await deleteDoc(doc(db, "clases", String(id)));
 }

@@ -1,19 +1,19 @@
-.acciones-tabla {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.acciones-tabla button {
+.boton-excel {
   background: #7b0000;
   color: white;
   border: none;
-  padding: 13px 22px;
-  border-radius: 12px;
+  padding: 11px 18px;
+  border-radius: 10px;
   font-weight: bold;
   cursor: pointer;
+  white-space: nowrap;
 }
 
-.acciones-tabla button:disabled {
+.boton-excel:hover {
+  background: #5c0000;
+}
+
+.boton-excel:disabled {
   background: #9ca3af;
   cursor: not-allowed;
 }

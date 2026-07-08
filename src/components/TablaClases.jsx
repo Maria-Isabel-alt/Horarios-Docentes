@@ -4,9 +4,14 @@ function TablaClases({
   clases,
   clasesBase,
   onEliminarClase,
+  acciones,
   mensajeVacio = "Todavía no hay clases registradas.",
 }) {
   const eliminar = async (id) => {
+    const confirmar = confirm("¿Seguro que deseas eliminar esta clase?");
+
+    if (!confirmar) return;
+
     try {
       await onEliminarClase(id);
     } catch (error) {
@@ -17,7 +22,14 @@ function TablaClases({
 
   return (
     <section className="panel">
-      <h2>Clases registradas</h2>
+      <div className="panel-header-tabla">
+        <div>
+          <h2>Clases registradas</h2>
+          <p>Consulta las clases guardadas en la programación.</p>
+        </div>
+
+        {acciones && <div className="acciones-tabla">{acciones}</div>}
+      </div>
 
       {clases.length === 0 ? (
         <p className="vacio">{mensajeVacio}</p>
