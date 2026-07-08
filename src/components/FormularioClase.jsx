@@ -1,0 +1,195 @@
+import { useState } from "react";
+
+const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+
+const estadoInicial = {
+  profesor: "",
+  cedula: "",
+  asignatura: "",
+  codigo: "",
+  dia: "",
+  horaInicio: "",
+  horaFin: "",
+  grupo: "",
+  salon: "",
+  programa: "",
+  jornada: "",
+};
+
+function FormularioClase({ onAgregarClase }) {
+  const [formulario, setFormulario] = useState(estadoInicial);
+  const [mensaje, setMensaje] = useState("");
+
+  const cambiarDato = (e) => {
+    const { name, value } = e.target;
+
+    setFormulario({
+      ...formulario,
+      [name]: value,
+    });
+  };
+
+const guardarClase = async (e) => {
+  e.preventDefault();
+
+  if (
+    !formulario.profesor ||
+    !formulario.cedula ||
+    !formulario.asignatura ||
+    !formulario.dia ||
+    !formulario.horaInicio ||
+    !formulario.horaFin ||
+    !formulario.grupo
+  ) {
+    setMensaje("⚠ Debes llenar profesor, cédula, asignatura, día, hora y grupo.");
+    return;
+  }
+
+  if (formulario.horaFin <= formulario.horaInicio) {
+    setMensaje("⚠ La hora final debe ser mayor que la hora inicial.");
+    return;
+  }
+
+  const nuevaClase = {
+    ...formulario,
+    id: Date.now(),
+  };
+
+  try {
+    await onAgregarClase(nuevaClase);
+    setFormulario(estadoInicial);
+    setMensaje("✅ Clase guardada correctamente.");
+  } catch (error) {
+    console.error(error);
+    setMensaje("❌ No se pudo guardar la clase en Firebase. Revisa Firestore.");
+  }
+};
+
+  return (
+    <section className="panel">
+      <h2>Nueva clase</h2>
+
+      {mensaje && <div className="mensaje">{mensaje}</div>}
+
+      <form onSubmit={guardarClase} className="formulario">
+        <div className="campo">
+          <label>Nombre del profesor</label>
+          <input
+            name="profesor"
+            value={formulario.profesor}
+            onChange={cambiarDato}
+            placeholder="Ej: Juan Pérez"
+          />
+        </div>
+
+        <div className="campo">
+          <label>Cédula del profesor</label>
+          <input
+            name="cedula"
+            value={formulario.cedula}
+            onChange={cambiarDato}
+            placeholder="Ej: 10101010"
+          />
+        </div>
+
+        <div className="campo">
+          <label>Asignatura</label>
+          <input
+            name="asignatura"
+            value={formulario.asignatura}
+            onChange={cambiarDato}
+            placeholder="Ej: Derecho civil"
+          />
+        </div>
+
+        <div className="campo">
+          <label>Código</label>
+          <input
+            name="codigo"
+            value={formulario.codigo}
+            onChange={cambiarDato}
+            placeholder="Ej: DP046"
+          />
+        </div>
+
+        <div className="campo">
+          <label>Día</label>
+          <select name="dia" value={formulario.dia} onChange={cambiarDato}>
+            <option value="">Seleccionar día</option>
+            {dias.map((dia) => (
+              <option key={dia} value={dia}>
+                {dia}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="campo">
+          <label>Hora inicio</label>
+          <input
+            type="time"
+            name="horaInicio"
+            value={formulario.horaInicio}
+            onChange={cambiarDato}
+          />
+        </div>
+
+        <div className="campo">
+          <label>Hora fin</label>
+          <input
+            type="time"
+            name="horaFin"
+            value={formulario.horaFin}
+            onChange={cambiarDato}
+          />
+        </div>
+
+        <div className="campo">
+          <label>Grupo</label>
+          <input
+            name="grupo"
+            value={formulario.grupo}
+            onChange={cambiarDato}
+            placeholder="Ej: EJM-1"
+          />
+        </div>
+
+        <div className="campo">
+          <label>Salón</label>
+          <input
+            name="salon"
+            value={formulario.salon}
+            onChange={cambiarDato}
+            placeholder="Ej: 1101"
+          />
+        </div>
+
+        <div className="campo">
+          <label>Programa</label>
+          <input
+            name="programa"
+            value={formulario.programa}
+            onChange={cambiarDato}
+            placeholder="Ej: Derecho Cali"
+          />
+        </div>
+
+        <div className="campo">
+          <label>Jornada</label>
+          <input
+            name="jornada"
+            value={formulario.jornada}
+            onChange={cambiarDato}
+            placeholder="Ej: Nocturno"
+          />
+        </div>
+
+        <button type="submit" className="boton-guardar">
+          Guardar clase
+        </button>
+      </form>
+    </section>
+  );
+}
+
+export default FormularioClase;

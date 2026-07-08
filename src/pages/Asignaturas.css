@@ -1,0 +1,9 @@
+.asignaturas-panel {
+  min-height: 260px;
+}
+
+.asignaturas-panel p {
+  max-width: 760px;
+  color: #4b5563;
+  line-height: 1.6;
+}
