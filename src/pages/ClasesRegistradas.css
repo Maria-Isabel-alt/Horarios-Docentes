@@ -1,0 +1,19 @@
+.acciones-tabla {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.acciones-tabla button {
+  background: #7b0000;
+  color: white;
+  border: none;
+  padding: 13px 22px;
+  border-radius: 12px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.acciones-tabla button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}

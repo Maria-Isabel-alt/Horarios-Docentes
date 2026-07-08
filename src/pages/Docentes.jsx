@@ -11,6 +11,7 @@ function Docentes({ clases }) {
           {
             nombre: clase.profesor,
             cedula: clase.cedula,
+            contrato: clase.contrato || "Sin dato",
             programa: clase.programa || "Sin programa",
             totalClases: clases.filter((c) => c.cedula === clase.cedula).length,
           },
@@ -37,6 +38,7 @@ function Docentes({ clases }) {
                 <tr>
                   <th>Docente</th>
                   <th>Cédula</th>
+                  <th>Contrato</th>
                   <th>Programa</th>
                   <th>Total clases</th>
                 </tr>
@@ -47,6 +49,7 @@ function Docentes({ clases }) {
                   <tr key={docente.cedula}>
                     <td>{docente.nombre}</td>
                     <td>{docente.cedula}</td>
+                    <td>{docente.contrato}</td>
                     <td>{docente.programa}</td>
                     <td>{docente.totalClases}</td>
                   </tr>

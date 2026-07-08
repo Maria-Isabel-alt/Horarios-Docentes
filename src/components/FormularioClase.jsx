@@ -5,6 +5,7 @@ const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 const estadoInicial = {
   profesor: "",
   cedula: "",
+  contrato: "",
   asignatura: "",
   codigo: "",
   dia: "",
@@ -34,15 +35,15 @@ const guardarClase = async (e) => {
 
   if (
     !formulario.profesor ||
-    !formulario.cedula ||
-    !formulario.asignatura ||
+!formulario.cedula ||
+!formulario.contrato ||
+!formulario.asignatura ||
     !formulario.dia ||
     !formulario.horaInicio ||
     !formulario.horaFin ||
     !formulario.grupo
   ) {
-    setMensaje("⚠ Debes llenar profesor, cédula, asignatura, día, hora y grupo.");
-    return;
+setMensaje("⚠ Debes llenar profesor, cédula, contrato, asignatura, día, hora y grupo.");    return;
   }
 
   if (formulario.horaFin <= formulario.horaInicio) {
@@ -91,6 +92,21 @@ const guardarClase = async (e) => {
             placeholder="Ej: 10101010"
           />
         </div>
+
+        <div className="campo">
+  <label>Tipo de contrato</label>
+  <select
+    name="contrato"
+    value={formulario.contrato}
+    onChange={cambiarDato}
+  >
+    <option value="">Seleccionar contrato</option>
+    <option value="HC">HC</option>
+    <option value="TC">TC</option>
+    <option value="MT">MT</option>
+    <option value="DIRECTOR">DIRECTOR</option>
+  </select>
+</div>
 
         <div className="campo">
           <label>Asignatura</label>

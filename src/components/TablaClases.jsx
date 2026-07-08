@@ -6,6 +6,15 @@ function TablaClases({
   onEliminarClase,
   mensajeVacio = "Todavía no hay clases registradas.",
 }) {
+  const eliminar = async (id) => {
+    try {
+      await onEliminarClase(id);
+    } catch (error) {
+      console.error(error);
+      alert("No se pudo eliminar la clase.");
+    }
+  };
+
   return (
     <section className="panel">
       <h2>Clases registradas</h2>
@@ -19,12 +28,14 @@ function TablaClases({
               <tr>
                 <th>Profesor</th>
                 <th>Cédula</th>
+                <th>Contrato</th>
                 <th>Asignatura</th>
                 <th>Día</th>
                 <th>Hora</th>
                 <th>Grupo</th>
                 <th>Salón</th>
                 <th>Programa</th>
+                <th>Jornada</th>
                 <th>Alertas</th>
                 <th>Acción</th>
               </tr>
@@ -41,6 +52,7 @@ function TablaClases({
                   >
                     <td>{clase.profesor}</td>
                     <td>{clase.cedula}</td>
+                    <td>{clase.contrato || "Sin dato"}</td>
                     <td>{clase.asignatura}</td>
                     <td>{clase.dia}</td>
                     <td>
@@ -49,6 +61,7 @@ function TablaClases({
                     <td>{clase.grupo}</td>
                     <td>{clase.salon}</td>
                     <td>{clase.programa}</td>
+                    <td>{clase.jornada}</td>
                     <td>
                       {alertas.length > 0 ? (
                         alertas.map((alerta) => (
@@ -63,7 +76,7 @@ function TablaClases({
                     <td>
                       <button
                         className="eliminar"
-                        onClick={() => onEliminarClase(clase.id)}
+                        onClick={() => eliminar(clase.id)}
                       >
                         Eliminar
                       </button>

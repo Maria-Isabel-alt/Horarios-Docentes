@@ -8,9 +8,11 @@ import Grupos from "./pages/Grupos";
 import Asignaturas from "./pages/Asignaturas";
 import Programacion from "./pages/Programacion";
 import Alertas from "./pages/Alertas";
+import ClasesRegistradas from "./pages/ClasesRegistradas";
 
 import { auth } from "./Firebase/config";
 import { obtenerAlertas } from "./utils/horarios";
+
 
 import {
   escucharClasesDelUsuario,
@@ -67,6 +69,7 @@ function App() {
 
 const menu = [
   { id: "programacion", texto: "Programación" },
+  { id: "clases", texto: "Clases registradas" },
   { id: "alertas", texto: "Alertas" },
   { id: "docentes", texto: "Docentes" },
   { id: "grupos", texto: "Grupos" },
@@ -125,6 +128,14 @@ const menu = [
             onEliminarClase={eliminarClase}
           />
         )}
+        
+        {pestanaActiva === "clases" && (
+  <ClasesRegistradas
+    clases={clases}
+    totalCruces={totalCruces}
+    onEliminarClase={eliminarClase}
+  />
+)}
 
         {pestanaActiva === "alertas" && (
           <Alertas
