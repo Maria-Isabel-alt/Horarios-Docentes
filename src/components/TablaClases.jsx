@@ -2,8 +2,8 @@ import { useState } from "react";
 import { obtenerAlertas } from "../utils/horarios";
 
 function TablaClases({
-  clases,
-  clasesBase,
+  clases = [],
+  clasesBase = [],
   onEliminarClase,
   onEditarClase,
   acciones,
