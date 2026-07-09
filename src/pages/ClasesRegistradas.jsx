@@ -37,8 +37,8 @@ function ClasesRegistradas({ clases, totalCruces, onEliminarClase, onEditarClase
 
       <Tarjetas totalClases={clases.length} totalCruces={totalCruces} />
 
-      <TablaClases
         clases={clases}
+      <TablaClases
         clasesBase={clases}
         onEliminarClase={onEliminarClase}
         onEditarClase={onEditarClase}

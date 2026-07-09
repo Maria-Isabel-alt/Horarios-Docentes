@@ -32,10 +32,19 @@ function Programacion({
 />
 
       <TablaClases
-        clases={clases}
         clasesBase={clases}
         onEliminarClase={onEliminarClase}
         onEditarClase={onEditarClase}
+        mostrarBuscador={true}
+        acciones={
+          <button
+            className="boton-excel"
+            onClick={descargarExcel}
+            disabled={clases.length === 0}
+          >
+            Descargar Excel
+          </button>
+        }
       />
     </>
   );
