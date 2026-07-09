@@ -4,7 +4,16 @@ import FormularioClase from "../components/FormularioClase";
 import TablaClases from "../components/TablaClases";
 import "./Programacion.css";
 
-function Programacion({ clases, totalCruces, onAgregarClase, onEliminarClase }) {
+function Programacion({
+  clases,
+  totalCruces,
+  onAgregarClase,
+  onEliminarClase,
+  onEditarClase,
+  claseEnEdicion,
+  onActualizarClase,
+  onCancelarEdicion,
+}) {
   return (
     <>
       <Encabezado
@@ -14,12 +23,19 @@ function Programacion({ clases, totalCruces, onAgregarClase, onEliminarClase }) 
 
       <Tarjetas totalClases={clases.length} totalCruces={totalCruces} />
 
-      <FormularioClase onAgregarClase={onAgregarClase} />
+<FormularioClase
+  key={claseEnEdicion?.id || "nueva-clase"}
+  onAgregarClase={onAgregarClase}
+  claseEnEdicion={claseEnEdicion}
+  onActualizarClase={onActualizarClase}
+  onCancelarEdicion={onCancelarEdicion}
+/>
 
       <TablaClases
         clases={clases}
         clasesBase={clases}
         onEliminarClase={onEliminarClase}
+        onEditarClase={onEditarClase}
       />
     </>
   );

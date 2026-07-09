@@ -4,8 +4,8 @@ import Tarjetas from "../components/Tarjetas";
 import TablaClases from "../components/TablaClases";
 import "./ClasesRegistradas.css";
 
-function ClasesRegistradas({ clases, totalCruces, onEliminarClase }) {
-  const descargarExcel = () => {
+function ClasesRegistradas({ clases, totalCruces, onEliminarClase, onEditarClase }) {
+    const descargarExcel = () => {
     const datos = clases.map((clase) => ({
       Profesor: clase.profesor,
       Cedula: clase.cedula,
@@ -41,6 +41,8 @@ function ClasesRegistradas({ clases, totalCruces, onEliminarClase }) {
         clases={clases}
         clasesBase={clases}
         onEliminarClase={onEliminarClase}
+        onEditarClase={onEditarClase}
+        mostrarBuscador={true}
         acciones={
           <button
             className="boton-excel"

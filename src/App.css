@@ -328,3 +328,58 @@ td {
 .tabla-contenedor {
   margin-top: 10px;
 }
+
+.acciones-fila {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.editar {
+  background: #92400e;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.editar:hover {
+  background: #78350f;
+}
+
+.boton-cancelar {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: 320px;
+  max-width: 100%;
+  min-height: 48px;
+  background: #374151;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.boton-cancelar:hover {
+  background: #111827;
+}
+
+.buscador-tabla {
+  width: 360px;
+  max-width: 100%;
+  padding: 11px 13px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.acciones-tabla {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+}

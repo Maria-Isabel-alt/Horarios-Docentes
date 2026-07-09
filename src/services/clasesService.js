@@ -5,6 +5,7 @@ import {
   doc,
   onSnapshot,
   query,
+  updateDoc,
   where,
 } from "firebase/firestore";
 
@@ -40,4 +41,14 @@ export async function agregarClaseFirestore(clase, usuario) {
 
 export async function eliminarClaseFirestore(id) {
   await deleteDoc(doc(db, "clases", String(id)));
+}
+export async function actualizarClaseFirestore(id, clase) {
+  const datosClase = { ...clase };
+
+  delete datosClase.id;
+
+  await updateDoc(doc(db, "clases", String(id)), {
+    ...datosClase,
+    fechaActualizacion: new Date().toISOString(),
+  });
 }

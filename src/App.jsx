@@ -13,11 +13,11 @@ import ClasesRegistradas from "./pages/ClasesRegistradas";
 import { auth } from "./Firebase/config";
 import { obtenerAlertas } from "./utils/horarios";
 
-
 import {
   escucharClasesDelUsuario,
   agregarClaseFirestore,
   eliminarClaseFirestore,
+  actualizarClaseFirestore,
 } from "./services/clasesService";
 
 function App() {
@@ -29,6 +29,8 @@ function App() {
 
   // Ahora las clases vienen de Firestore
   const [clases, setClases] = useState([]);
+
+  const [claseEnEdicion, setClaseEnEdicion] = useState(null);
 
   useEffect(() => {
     const cancelarEscucha = onAuthStateChanged(auth, (user) => {
@@ -55,9 +57,27 @@ function App() {
     await agregarClaseFirestore(nuevaClase, usuario);
   };
 
-  const eliminarClase = async (id) => {
-    await eliminarClaseFirestore(id);
-  };
+  const editarClase = (clase) => {
+  setClaseEnEdicion(clase);
+  setPestanaActiva("programacion");
+};
+
+const actualizarClase = async (claseEditada) => {
+  await actualizarClaseFirestore(claseEditada.id, claseEditada);
+  setClaseEnEdicion(null);
+};
+
+const cancelarEdicion = () => {
+  setClaseEnEdicion(null);
+};
+
+const eliminarClase = async (id) => {
+  await eliminarClaseFirestore(id);
+
+  if (claseEnEdicion?.id === id) {
+    setClaseEnEdicion(null);
+  }
+};
 
   const totalCruces = clases.filter(
     (clase) => obtenerAlertas(clase, clases).length > 0
@@ -120,32 +140,38 @@ const menu = [
 
 {pestanaActiva === "asignaturas" && <Asignaturas clases={clases} />}
 
-        {pestanaActiva === "programacion" && (
-          <Programacion
-            clases={clases}
-            totalCruces={totalCruces}
-            onAgregarClase={agregarClase}
-            onEliminarClase={eliminarClase}
-          />
-        )}
+{pestanaActiva === "programacion" && (
+  <Programacion
+    clases={clases}
+    totalCruces={totalCruces}
+    onAgregarClase={agregarClase}
+    onEliminarClase={eliminarClase}
+    onEditarClase={editarClase}
+    claseEnEdicion={claseEnEdicion}
+    onActualizarClase={actualizarClase}
+    onCancelarEdicion={cancelarEdicion}
+  />
+)}
         
-        {pestanaActiva === "clases" && (
+{pestanaActiva === "clases" && (
   <ClasesRegistradas
     clases={clases}
     totalCruces={totalCruces}
     onEliminarClase={eliminarClase}
+    onEditarClase={editarClase}
   />
 )}
 
-        {pestanaActiva === "alertas" && (
-          <Alertas
-            clases={clasesConCruce}
-            clasesBase={clases}
-            totalClases={clases.length}
-            totalCruces={totalCruces}
-            onEliminarClase={eliminarClase}
-          />
-        )}
+{pestanaActiva === "alertas" && (
+  <Alertas
+    clases={clasesConCruce}
+    clasesBase={clases}
+    totalClases={clases.length}
+    totalCruces={totalCruces}
+    onEliminarClase={eliminarClase}
+    onEditarClase={editarClase}
+  />
+)}
       </main>
     </div>
   );

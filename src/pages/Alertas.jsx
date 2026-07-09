@@ -9,6 +9,7 @@ function Alertas({
   totalClases,
   totalCruces,
   onEliminarClase,
+  onEditarClase,
 }) {
   return (
     <>
@@ -23,6 +24,8 @@ function Alertas({
         clases={clases}
         clasesBase={clasesBase}
         onEliminarClase={onEliminarClase}
+        onEditarClase={onEditarClase}
+        mostrarBuscador={true}
         mensajeVacio="No hay cruces registrados. Todo está correcto."
       />
     </>

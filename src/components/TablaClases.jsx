@@ -1,12 +1,25 @@
+import { useState } from "react";
 import { obtenerAlertas } from "../utils/horarios";
 
 function TablaClases({
   clases,
   clasesBase,
   onEliminarClase,
+  onEditarClase,
   acciones,
+  mostrarBuscador = false,
   mensajeVacio = "Todavía no hay clases registradas.",
 }) {
+  const [busqueda, setBusqueda] = useState("");
+
+  const textoBusqueda = busqueda.trim().toLowerCase();
+
+  const clasesFiltradas = clases.filter((clase) =>
+    Object.values(clase).some((valor) =>
+      String(valor || "").toLowerCase().includes(textoBusqueda)
+    )
+  );
+
   const eliminar = async (id) => {
     const confirmar = confirm("¿Seguro que deseas eliminar esta clase?");
 
@@ -28,10 +41,21 @@ function TablaClases({
           <p>Consulta las clases guardadas en la programación.</p>
         </div>
 
-        {acciones && <div className="acciones-tabla">{acciones}</div>}
+        <div className="acciones-tabla">
+          {mostrarBuscador && (
+            <input
+              className="buscador-tabla"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="Buscar por docente, cédula, grupo, día, programa..."
+            />
+          )}
+
+          {acciones}
+        </div>
       </div>
 
-      {clases.length === 0 ? (
+      {clasesFiltradas.length === 0 ? (
         <p className="vacio">{mensajeVacio}</p>
       ) : (
         <div className="tabla-contenedor">
@@ -54,7 +78,7 @@ function TablaClases({
             </thead>
 
             <tbody>
-              {clases.map((clase) => {
+              {clasesFiltradas.map((clase) => {
                 const alertas = obtenerAlertas(clase, clasesBase);
 
                 return (
@@ -86,12 +110,21 @@ function TablaClases({
                       )}
                     </td>
                     <td>
-                      <button
-                        className="eliminar"
-                        onClick={() => eliminar(clase.id)}
-                      >
-                        Eliminar
-                      </button>
+                      <div className="acciones-fila">
+                        <button
+                          className="editar"
+                          onClick={() => onEditarClase(clase)}
+                        >
+                          Editar
+                        </button>
+
+                        <button
+                          className="eliminar"
+                          onClick={() => eliminar(clase.id)}
+                        >
+                          Eliminar
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

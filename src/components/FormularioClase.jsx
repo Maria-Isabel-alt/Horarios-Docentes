@@ -17,9 +17,21 @@ const estadoInicial = {
   jornada: "",
 };
 
-function FormularioClase({ onAgregarClase }) {
-  const [formulario, setFormulario] = useState(estadoInicial);
-  const [mensaje, setMensaje] = useState("");
+function FormularioClase({
+  onAgregarClase,
+  claseEnEdicion,
+  onActualizarClase,
+  onCancelarEdicion,
+}) {
+const [formulario, setFormulario] = useState(
+  claseEnEdicion || estadoInicial
+);
+
+const [mensaje, setMensaje] = useState(
+  claseEnEdicion
+    ? "✏️ Estás editando una clase. Ajusta los datos y guarda los cambios."
+    : ""
+);
 
   const cambiarDato = (e) => {
     const { name, value } = e.target;
@@ -30,45 +42,63 @@ function FormularioClase({ onAgregarClase }) {
     });
   };
 
-const guardarClase = async (e) => {
-  e.preventDefault();
+  const guardarClase = async (e) => {
+    e.preventDefault();
 
-  if (
-    !formulario.profesor ||
-!formulario.cedula ||
-!formulario.contrato ||
-!formulario.asignatura ||
-    !formulario.dia ||
-    !formulario.horaInicio ||
-    !formulario.horaFin ||
-    !formulario.grupo
-  ) {
-setMensaje("⚠ Debes llenar profesor, cédula, contrato, asignatura, día, hora y grupo.");    return;
-  }
+    if (
+      !formulario.profesor ||
+      !formulario.cedula ||
+      !formulario.contrato ||
+      !formulario.asignatura ||
+      !formulario.dia ||
+      !formulario.horaInicio ||
+      !formulario.horaFin ||
+      !formulario.grupo
+    ) {
+      setMensaje(
+        "⚠ Debes llenar profesor, cédula, contrato, asignatura, día, hora y grupo."
+      );
+      return;
+    }
 
-  if (formulario.horaFin <= formulario.horaInicio) {
-    setMensaje("⚠ La hora final debe ser mayor que la hora inicial.");
-    return;
-  }
+    if (formulario.horaFin <= formulario.horaInicio) {
+      setMensaje("⚠ La hora final debe ser mayor que la hora inicial.");
+      return;
+    }
 
-  const nuevaClase = {
-    ...formulario,
-    id: Date.now(),
+    const nuevaClase = {
+      ...formulario,
+      id: Date.now(),
+    };
+
+    try {
+      if (claseEnEdicion) {
+        await onActualizarClase(formulario);
+        setMensaje("✅ Clase actualizada correctamente.");
+      } else {
+        await onAgregarClase(nuevaClase);
+        setMensaje("✅ Clase guardada correctamente.");
+      }
+
+      setFormulario(estadoInicial);
+    } catch (error) {
+      console.error(error);
+      setMensaje("❌ No se pudo guardar la clase.");
+    }
   };
 
-  try {
-    await onAgregarClase(nuevaClase);
+  const cancelarEdicion = () => {
     setFormulario(estadoInicial);
-    setMensaje("✅ Clase guardada correctamente.");
-  } catch (error) {
-    console.error(error);
-    setMensaje("❌ No se pudo guardar la clase en Firebase. Revisa Firestore.");
-  }
-};
+    setMensaje("");
+
+    if (onCancelarEdicion) {
+      onCancelarEdicion();
+    }
+  };
 
   return (
     <section className="panel">
-      <h2>Nueva clase</h2>
+      <h2>{claseEnEdicion ? "Editar clase" : "Nueva clase"}</h2>
 
       {mensaje && <div className="mensaje">{mensaje}</div>}
 
@@ -94,19 +124,19 @@ setMensaje("⚠ Debes llenar profesor, cédula, contrato, asignatura, día, hora
         </div>
 
         <div className="campo">
-  <label>Tipo de contrato</label>
-  <select
-    name="contrato"
-    value={formulario.contrato}
-    onChange={cambiarDato}
-  >
-    <option value="">Seleccionar contrato</option>
-    <option value="HC">HC</option>
-    <option value="TC">TC</option>
-    <option value="MT">MT</option>
-    <option value="DIRECTOR">DIRECTOR</option>
-  </select>
-</div>
+          <label>Tipo de contrato</label>
+          <select
+            name="contrato"
+            value={formulario.contrato}
+            onChange={cambiarDato}
+          >
+            <option value="">Seleccionar contrato</option>
+            <option value="HC">HC</option>
+            <option value="TC">TC</option>
+            <option value="MT">MT</option>
+            <option value="DIRECTOR">DIRECTOR</option>
+          </select>
+        </div>
 
         <div className="campo">
           <label>Asignatura</label>
@@ -201,8 +231,18 @@ setMensaje("⚠ Debes llenar profesor, cédula, contrato, asignatura, día, hora
         </div>
 
         <button type="submit" className="boton-guardar">
-          Guardar clase
+          {claseEnEdicion ? "Actualizar clase" : "Guardar clase"}
         </button>
+
+        {claseEnEdicion && (
+          <button
+            type="button"
+            className="boton-cancelar"
+            onClick={cancelarEdicion}
+          >
+            Cancelar edición
+          </button>
+        )}
       </form>
     </section>
   );
