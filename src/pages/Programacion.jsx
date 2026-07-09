@@ -23,19 +23,18 @@ function Programacion({
 
       <Tarjetas totalClases={clases.length} totalCruces={totalCruces} />
 
-<FormularioClase
-  key={claseEnEdicion?.id || "nueva-clase"}
-  onAgregarClase={onAgregarClase}
-  claseEnEdicion={claseEnEdicion}
-  onActualizarClase={onActualizarClase}
-  onCancelarEdicion={onCancelarEdicion}
-/>
+      <FormularioClase
+        onAgregarClase={onAgregarClase}
+        claseEnEdicion={claseEnEdicion}
+        onActualizarClase={onActualizarClase}
+        onCancelarEdicion={onCancelarEdicion}
+      />
 
       <TablaClases
+        clases={clases}
         clasesBase={clases}
         onEliminarClase={onEliminarClase}
         onEditarClase={onEditarClase}
-        mostrarBuscador={true}
       />
     </>
   );
