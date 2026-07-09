@@ -11,6 +11,7 @@ function TablaClases({
   mensajeVacio = "Todavía no hay clases registradas.",
 }) {
   const [busqueda, setBusqueda] = useState("");
+  const [menuAbierto, setMenuAbierto] = useState(null);
 
   const textoBusqueda = busqueda.trim().toLowerCase();
 
@@ -27,10 +28,16 @@ function TablaClases({
 
     try {
       await onEliminarClase(id);
+      setMenuAbierto(null);
     } catch (error) {
       console.error(error);
       alert("No se pudo eliminar la clase.");
     }
+  };
+
+  const editar = (clase) => {
+    onEditarClase(clase);
+    setMenuAbierto(null);
   };
 
   return (
@@ -109,22 +116,33 @@ function TablaClases({
                         <span className="ok">Sin cruce</span>
                       )}
                     </td>
-                    <td>
-                      <div className="acciones-fila">
-                        <button
-                          className="editar"
-                          onClick={() => onEditarClase(clase)}
-                        >
-                          Editar
-                        </button>
 
-                        <button
-                          className="eliminar"
-                          onClick={() => eliminar(clase.id)}
-                        >
-                          Eliminar
-                        </button>
-                      </div>
+                    <td className="celda-acciones">
+                      <button
+                        className="boton-ajustes"
+                        onClick={() =>
+                          setMenuAbierto(
+                            menuAbierto === clase.id ? null : clase.id
+                          )
+                        }
+                      >
+                        ⚙️
+                      </button>
+
+                      {menuAbierto === clase.id && (
+                        <div className="menu-acciones">
+                          <button onClick={() => editar(clase)}>
+                            Editar
+                          </button>
+
+                          <button
+                            className="opcion-eliminar"
+                            onClick={() => eliminar(clase.id)}
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 );
