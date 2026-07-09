@@ -24,6 +24,7 @@ function Programacion({
       <Tarjetas totalClases={clases.length} totalCruces={totalCruces} />
 
       <FormularioClase
+        key={claseEnEdicion?.id || "nueva-clase"}
         onAgregarClase={onAgregarClase}
         claseEnEdicion={claseEnEdicion}
         onActualizarClase={onActualizarClase}

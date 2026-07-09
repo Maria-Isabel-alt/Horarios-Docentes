@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
@@ -23,15 +23,34 @@ function FormularioClase({
   onActualizarClase,
   onCancelarEdicion,
 }) {
-const [formulario, setFormulario] = useState(
-  claseEnEdicion || estadoInicial
-);
+  const [formulario, setFormulario] = useState(estadoInicial);
+  const [mensaje, setMensaje] = useState("");
 
-const [mensaje, setMensaje] = useState(
-  claseEnEdicion
-    ? "✏️ Estás editando una clase. Ajusta los datos y guarda los cambios."
-    : ""
-);
+  useEffect(() => {
+    if (claseEnEdicion) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFormulario({
+        profesor: claseEnEdicion.profesor || "",
+        cedula: claseEnEdicion.cedula || "",
+        contrato: claseEnEdicion.contrato || "",
+        asignatura: claseEnEdicion.asignatura || "",
+        codigo: claseEnEdicion.codigo || "",
+        dia: claseEnEdicion.dia || "",
+        horaInicio: claseEnEdicion.horaInicio || "",
+        horaFin: claseEnEdicion.horaFin || "",
+        grupo: claseEnEdicion.grupo || "",
+        salon: claseEnEdicion.salon || "",
+        programa: claseEnEdicion.programa || "",
+        jornada: claseEnEdicion.jornada || "",
+        id: claseEnEdicion.id,
+      });
+
+      setMensaje("✏️ Estás editando una clase. Ajusta los datos y guarda los cambios.");
+    } else {
+      setFormulario(estadoInicial);
+      setMensaje("");
+    }
+  }, [claseEnEdicion]);
 
   const cambiarDato = (e) => {
     const { name, value } = e.target;
@@ -66,17 +85,16 @@ const [mensaje, setMensaje] = useState(
       return;
     }
 
-    const nuevaClase = {
-      ...formulario,
-      id: Date.now(),
-    };
-
     try {
       if (claseEnEdicion) {
         await onActualizarClase(formulario);
         setMensaje("✅ Clase actualizada correctamente.");
       } else {
-        await onAgregarClase(nuevaClase);
+        await onAgregarClase({
+          ...formulario,
+          id: Date.now(),
+        });
+
         setMensaje("✅ Clase guardada correctamente.");
       }
 

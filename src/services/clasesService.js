@@ -42,10 +42,14 @@ export async function agregarClaseFirestore(clase, usuario) {
 export async function eliminarClaseFirestore(id) {
   await deleteDoc(doc(db, "clases", String(id)));
 }
+
 export async function actualizarClaseFirestore(id, clase) {
   const datosClase = { ...clase };
 
   delete datosClase.id;
+  delete datosClase.creadoPor;
+  delete datosClase.correoUsuario;
+  delete datosClase.fechaCreacion;
 
   await updateDoc(doc(db, "clases", String(id)), {
     ...datosClase,
