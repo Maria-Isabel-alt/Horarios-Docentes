@@ -12,6 +12,7 @@ function TablaClases({
 }) {
   const [busqueda, setBusqueda] = useState("");
   const [menuAbierto, setMenuAbierto] = useState(null);
+  const [claseAEliminar, setClaseAEliminar] = useState(null);
 
   const textoBusqueda = busqueda.trim().toLowerCase();
 
@@ -21,14 +22,17 @@ function TablaClases({
     )
   );
 
-  const eliminar = async (id) => {
-    const confirmar = confirm("¿Seguro que deseas eliminar esta clase?");
+  const confirmarEliminar = (clase) => {
+    setClaseAEliminar(clase);
+    setMenuAbierto(null);
+  };
 
-    if (!confirmar) return;
+  const eliminar = async () => {
+    if (!claseAEliminar) return;
 
     try {
-      await onEliminarClase(id);
-      setMenuAbierto(null);
+      await onEliminarClase(claseAEliminar.id);
+      setClaseAEliminar(null);
     } catch (error) {
       console.error(error);
       alert("No se pudo eliminar la clase.");
@@ -36,8 +40,10 @@ function TablaClases({
   };
 
   const editar = (clase) => {
-    onEditarClase(clase);
-    setMenuAbierto(null);
+    if (onEditarClase) {
+      onEditarClase(clase);
+      setMenuAbierto(null);
+    }
   };
 
   return (
@@ -131,13 +137,11 @@ function TablaClases({
 
                       {menuAbierto === clase.id && (
                         <div className="menu-acciones">
-                          <button onClick={() => editar(clase)}>
-                            Editar
-                          </button>
+                          <button onClick={() => editar(clase)}>Editar</button>
 
                           <button
                             className="opcion-eliminar"
-                            onClick={() => eliminar(clase.id)}
+                            onClick={() => confirmarEliminar(clase)}
                           >
                             Eliminar
                           </button>
@@ -149,6 +153,49 @@ function TablaClases({
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {claseAEliminar && (
+        <div className="modal-fondo">
+          <div className="modal-confirmacion">
+            <div className="modal-icono">⚠️</div>
+
+            <h3>Eliminar clase</h3>
+
+            <p>
+              ¿Seguro que deseas eliminar esta clase? Esta acción no se puede
+              deshacer.
+            </p>
+
+            <div className="detalle-eliminar">
+              <strong>{claseAEliminar.profesor}</strong>
+              <span>{claseAEliminar.asignatura}</span>
+              <span>
+                {claseAEliminar.dia} · {claseAEliminar.horaInicio} -{" "}
+                {claseAEliminar.horaFin}
+              </span>
+              <span>Grupo: {claseAEliminar.grupo}</span>
+            </div>
+
+            <div className="modal-botones">
+              <button
+                type="button"
+                className="btn-cancelar-modal"
+                onClick={() => setClaseAEliminar(null)}
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                className="btn-eliminar-modal"
+                onClick={eliminar}
+              >
+                Sí, eliminar
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </section>
