@@ -2,6 +2,14 @@ import { useEffect, useState } from "react";
 
 const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
+const programas = [
+  "Derecho Palmira",
+  "Derecho Cali",
+  "Derecho Virtual",
+  "Ciencia Política Presencial",
+  "Ciencia Política Virtual",
+];
+
 const estadoInicial = {
   profesor: "",
   cedula: "",
@@ -228,15 +236,23 @@ function FormularioClase({
           />
         </div>
 
-        <div className="campo">
-          <label>Programa</label>
-          <input
-            name="programa"
-            value={formulario.programa}
-            onChange={cambiarDato}
-            placeholder="Ej: Derecho Cali"
-          />
-        </div>
+<div className="campo">
+  <label>Programa</label>
+
+  <select
+    name="programa"
+    value={formulario.programa}
+    onChange={cambiarDato}
+  >
+    <option value="">Seleccionar programa</option>
+
+    {programas.map((programa) => (
+      <option key={programa} value={programa}>
+        {programa}
+      </option>
+    ))}
+  </select>
+</div>
 
         <div className="campo">
           <label>Jornada</label>
