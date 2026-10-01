@@ -15,12 +15,14 @@ function Docentes({ clases = [] }) {
       try {
         const resultado = await getDocs(collection(db, "docentes"));
 
-        const listaDocentes = resultado.docs.map((documento) => ({
-          id: documento.id,
-          ...documento.data(),
-        }));
+const listaDocentes = resultado.docs.map((documento) => ({
+  id: documento.id,
+  ...documento.data(),
+}));
 
-        setDocentes(listaDocentes);
+console.log("DOCENTES FIREBASE:", listaDocentes);
+
+setDocentes(listaDocentes);
       } catch (error) {
         console.error("Error al cargar docentes:", error);
         setError("No se pudieron cargar los docentes.");

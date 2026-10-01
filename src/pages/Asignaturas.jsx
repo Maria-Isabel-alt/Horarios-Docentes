@@ -1,38 +1,68 @@
+import { useEffect, useState } from "react";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../Firebase/config";
+
 import Encabezado from "../components/Encabezado";
 import "./Asignaturas.css";
 
-function Asignaturas({ clases }) {
-  const asignaturas = Array.from(
-    new Map(
-      clases
-        .filter((clase) => clase.asignatura)
-        .map((clase) => [
-          clase.codigo || clase.asignatura,
-          {
-            asignatura: clase.asignatura,
-            codigo: clase.codigo || "Sin código",
-            programa: clase.programa || "Sin programa",
-            totalClases: clases.filter(
-              (c) =>
-                c.asignatura === clase.asignatura &&
-                (c.codigo || "") === (clase.codigo || "")
-            ).length,
-          },
-        ])
-    ).values()
-  );
+function Asignaturas({ clases = [] }) {
+  const [asignaturas, setAsignaturas] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const cargarAsignaturas = async () => {
+      try {
+        const resultado = await getDocs(collection(db, "asignaturas"));
+
+        const listaAsignaturas = resultado.docs.map((documento) => ({
+          id: documento.id,
+          ...documento.data(),
+        }));
+
+        setAsignaturas(listaAsignaturas);
+      } catch (error) {
+        console.error("Error al cargar asignaturas:", error);
+        setError("No se pudieron cargar las asignaturas.");
+      } finally {
+        setCargando(false);
+      }
+    };
+
+    cargarAsignaturas();
+  }, []);
+
+  const obtenerTotalClases = (codigo) => {
+    return clases.filter((clase) => clase.codigo === codigo).length;
+  };
+
+  const obtenerProgramas = (codigo) => {
+    const programas = clases
+      .filter((clase) => clase.codigo === codigo && clase.programa)
+      .map((clase) => clase.programa);
+
+    const programasUnicos = [...new Set(programas)];
+
+    return programasUnicos.length > 0
+      ? programasUnicos.join(", ")
+      : "Sin clases asignadas";
+  };
 
   return (
     <>
       <Encabezado
         titulo="Asignaturas"
-        texto="Asignaturas registradas automáticamente desde la programación."
+        texto="Catálogo de asignaturas disponibles para la programación académica."
       />
 
       <section className="panel">
         <h2>Asignaturas registradas</h2>
 
-        {asignaturas.length === 0 ? (
+        {cargando ? (
+          <p className="vacio">Cargando asignaturas...</p>
+        ) : error ? (
+          <p className="vacio">{error}</p>
+        ) : asignaturas.length === 0 ? (
           <p className="vacio">Todavía no hay asignaturas registradas.</p>
         ) : (
           <div className="tabla-contenedor">
@@ -41,18 +71,21 @@ function Asignaturas({ clases }) {
                 <tr>
                   <th>Asignatura</th>
                   <th>Código</th>
-                  <th>Programa</th>
+                  <th>Programa(s)</th>
                   <th>Total clases</th>
                 </tr>
               </thead>
 
               <tbody>
                 {asignaturas.map((asignatura) => (
-                  <tr key={`${asignatura.codigo}-${asignatura.asignatura}`}>
-                    <td>{asignatura.asignatura}</td>
+                  <tr key={asignatura.id}>
+                    <td>{asignatura.nombre}</td>
+
                     <td>{asignatura.codigo}</td>
-                    <td>{asignatura.programa}</td>
-                    <td>{asignatura.totalClases}</td>
+
+                    <td>{obtenerProgramas(asignatura.codigo)}</td>
+
+                    <td>{obtenerTotalClases(asignatura.codigo)}</td>
                   </tr>
                 ))}
               </tbody>

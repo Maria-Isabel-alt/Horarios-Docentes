@@ -1,1 +1,150 @@
-/* Estilos propios de la página de programación */
+/* ============================= */
+/* BUSCADOR DE DOCENTES */
+/* ============================= */
+
+.busqueda-docente {
+  grid-column: 1 / -1;
+
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+
+  padding: 20px;
+  margin-bottom: 8px;
+
+  background: #f8f9fb;
+  border: 1px solid #e2e6ec;
+  border-radius: 16px;
+}
+
+.titulo-busqueda-docente {
+  grid-column: 1 / -1;
+}
+
+.titulo-busqueda-docente h3 {
+  margin: 0 0 4px;
+  font-size: 20px;
+  color: #111827;
+}
+
+.titulo-busqueda-docente p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.busqueda-docente .campo {
+  width: 100%;
+}
+
+.busqueda-docente .campo input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Resultados */
+
+.resultados-docentes {
+  grid-column: 1 / -1;
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  background: white;
+  border: 1px solid #d9dde5;
+  border-radius: 12px;
+  padding: 8px;
+}
+
+.resultado-docente {
+  width: 100%;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 12px 14px;
+
+  background: white;
+  border: none;
+  border-radius: 8px;
+
+  text-align: left;
+  cursor: pointer;
+
+  transition: background 0.2s ease;
+}
+
+.resultado-docente:hover {
+  background: #f3f4f6;
+}
+
+.resultado-docente strong {
+  color: #111827;
+}
+
+.resultado-docente span {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.estado-busqueda {
+  grid-column: 1 / -1;
+
+  padding: 10px 12px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.campo-codigo {
+  position: relative;
+}
+
+.resultados-codigo {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+
+  background: white;
+  border: 1px solid #d9dde5;
+  border-radius: 10px;
+  padding: 6px;
+
+  max-height: 240px;
+  overflow-y: auto;
+
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.resultado-codigo {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+
+  padding: 10px 12px;
+
+  background: white;
+  border: none;
+  border-radius: 7px;
+
+  text-align: left;
+  cursor: pointer;
+}
+
+.resultado-codigo:hover {
+  background: #f3f4f6;
+}
+
+.resultado-codigo strong {
+  color: #8b0000;
+}
+
+.resultado-codigo span {
+  color: #555;
+  font-size: 13px;
+}

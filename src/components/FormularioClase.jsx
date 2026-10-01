@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../Firebase/config";
 
 const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
@@ -34,6 +36,38 @@ function FormularioClase({
   const [formulario, setFormulario] = useState(estadoInicial);
   const [mensaje, setMensaje] = useState("");
 
+  const [docentes, setDocentes] = useState([]);
+  const [busquedaNombre, setBusquedaNombre] = useState("");
+  const [busquedaApellido, setBusquedaApellido] = useState("");
+  const [busquedaCedula, setBusquedaCedula] = useState("");
+  const [cargandoDocentes, setCargandoDocentes] = useState(true);
+
+  const [asignaturas, setAsignaturas] = useState([]);
+const [busquedaCodigo, setBusquedaCodigo] = useState("");
+const [cargandoAsignaturas, setCargandoAsignaturas] = useState(true);
+
+  useEffect(() => {
+    const cargarDocentes = async () => {
+      try {
+        const resultado = await getDocs(collection(db, "docentes"));
+
+        const lista = resultado.docs.map((documento) => ({
+          id: documento.id,
+          ...documento.data(),
+        }));
+
+        setDocentes(lista);
+      } catch (error) {
+        console.error("Error al cargar docentes:", error);
+        setMensaje("❌ No se pudieron cargar los docentes.");
+      } finally {
+        setCargandoDocentes(false);
+      }
+    };
+
+    cargarDocentes();
+  }, []);
+
   useEffect(() => {
     if (claseEnEdicion) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -53,12 +87,104 @@ function FormularioClase({
         id: claseEnEdicion.id,
       });
 
-      setMensaje("✏️ Estás editando una clase. Ajusta los datos y guarda los cambios.");
-    } else {
-      setFormulario(estadoInicial);
-      setMensaje("");
-    }
+      setBusquedaCodigo(claseEnEdicion.codigo || "");
+
+      setMensaje(
+        "✏️ Estás editando una clase. Ajusta los datos y guarda los cambios."
+      );
+} else {
+  setFormulario(estadoInicial);
+  setBusquedaCodigo("");
+  setMensaje("");
+}
   }, [claseEnEdicion]);
+
+  useEffect(() => {
+  const cargarAsignaturas = async () => {
+    try {
+      const resultado = await getDocs(collection(db, "asignaturas"));
+
+      const lista = resultado.docs.map((documento) => ({
+        id: documento.id,
+        ...documento.data(),
+      }));
+
+      setAsignaturas(lista);
+    } catch (error) {
+      console.error("Error al cargar asignaturas:", error);
+      setMensaje("❌ No se pudieron cargar las asignaturas.");
+    } finally {
+      setCargandoAsignaturas(false);
+    }
+  };
+
+  cargarAsignaturas();
+}, []);
+
+  const normalizarTexto = (texto = "") =>
+    texto
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+
+  const hayBusqueda =
+    busquedaNombre.trim() !== "" ||
+    busquedaApellido.trim() !== "" ||
+    busquedaCedula.trim() !== "";
+
+  const docentesFiltrados = hayBusqueda
+    ? docentes
+        .filter((docente) => {
+          const nombre = normalizarTexto(docente.nombres);
+          const apellido = normalizarTexto(docente.apellidos);
+          const cedula = String(docente.cedula || "");
+
+          const nombreBuscado = normalizarTexto(busquedaNombre);
+          const apellidoBuscado = normalizarTexto(busquedaApellido);
+          const cedulaBuscada = busquedaCedula.trim();
+
+          return (
+            nombre.includes(nombreBuscado) &&
+            apellido.includes(apellidoBuscado) &&
+            cedula.includes(cedulaBuscada)
+          );
+        })
+        .slice(0, 10)
+    : [];
+
+  const seleccionarDocente = (docente) => {
+    setFormulario((anterior) => ({
+      ...anterior,
+      profesor: `${docente.nombres} ${docente.apellidos}`.trim(),
+      cedula: docente.cedula || "",
+      contrato: docente.contrato || "",
+    }));
+
+    setBusquedaNombre("");
+    setBusquedaApellido("");
+    setBusquedaCedula("");
+  };
+
+const asignaturasFiltradas =
+  busquedaCodigo.trim() !== ""
+    ? asignaturas
+        .filter((asignatura) =>
+          String(asignatura.codigo || "")
+            .toLowerCase()
+            .includes(busquedaCodigo.trim().toLowerCase())
+        )
+        .slice(0, 10)
+    : [];
+
+    const seleccionarAsignatura = (asignatura) => {
+  setFormulario((anterior) => ({
+    ...anterior,
+    codigo: asignatura.codigo || "",
+    asignatura: asignatura.nombre || "",
+  }));
+
+  setBusquedaCodigo(asignatura.codigo || "");
+};
 
   const cambiarDato = (e) => {
     const { name, value } = e.target;
@@ -107,6 +233,12 @@ function FormularioClase({
       }
 
       setFormulario(estadoInicial);
+
+      setBusquedaCodigo("");
+
+      setBusquedaNombre("");
+      setBusquedaApellido("");
+      setBusquedaCedula("");
     } catch (error) {
       console.error(error);
       setMensaje("❌ No se pudo guardar la clase.");
@@ -115,7 +247,12 @@ function FormularioClase({
 
   const cancelarEdicion = () => {
     setFormulario(estadoInicial);
+    setBusquedaCodigo("");
     setMensaje("");
+
+    setBusquedaNombre("");
+    setBusquedaApellido("");
+    setBusquedaCedula("");
 
     if (onCancelarEdicion) {
       onCancelarEdicion();
@@ -129,13 +266,82 @@ function FormularioClase({
       {mensaje && <div className="mensaje">{mensaje}</div>}
 
       <form onSubmit={guardarClase} className="formulario">
+        <div className="busqueda-docente">
+          <div className="titulo-busqueda-docente">
+            <h3>Buscar docente</h3>
+            <p>Busca por nombre, apellido o número de cédula.</p>
+          </div>
+
+          <div className="campo">
+            <label>Nombre</label>
+            <input
+              type="text"
+              value={busquedaNombre}
+              onChange={(e) => setBusquedaNombre(e.target.value)}
+              placeholder="Ej: Sebastian"
+            />
+          </div>
+
+          <div className="campo">
+            <label>Apellido</label>
+            <input
+              type="text"
+              value={busquedaApellido}
+              onChange={(e) => setBusquedaApellido(e.target.value)}
+              placeholder="Ej: Quintero"
+            />
+          </div>
+
+          <div className="campo">
+            <label>Cédula</label>
+            <input
+              type="text"
+              value={busquedaCedula}
+              onChange={(e) => setBusquedaCedula(e.target.value)}
+              placeholder="Ej: 1108641197"
+            />
+          </div>
+
+          {cargandoDocentes && (
+            <div className="estado-busqueda">Cargando docentes...</div>
+          )}
+
+          {!cargandoDocentes && hayBusqueda && (
+            <div className="resultados-docentes">
+              {docentesFiltrados.length > 0 ? (
+                docentesFiltrados.map((docente) => (
+                  <button
+                    key={docente.id}
+                    type="button"
+                    className="resultado-docente"
+                    onClick={() => seleccionarDocente(docente)}
+                  >
+                    <strong>
+                      {docente.nombres} {docente.apellidos}
+                    </strong>
+
+                    <span>
+                      C.C. {docente.cedula} ·{" "}
+                      {docente.contrato || "Sin contrato"}
+                    </span>
+                  </button>
+                ))
+              ) : (
+                <div className="estado-busqueda">
+                  No se encontraron docentes.
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         <div className="campo">
           <label>Nombre del profesor</label>
           <input
             name="profesor"
             value={formulario.profesor}
-            onChange={cambiarDato}
-            placeholder="Ej: Juan Pérez"
+            readOnly
+            placeholder="Selecciona un docente"
           />
         </div>
 
@@ -144,50 +350,87 @@ function FormularioClase({
           <input
             name="cedula"
             value={formulario.cedula}
-            onChange={cambiarDato}
-            placeholder="Ej: 10101010"
+            readOnly
+            placeholder="Se completa automáticamente"
           />
         </div>
 
         <div className="campo">
           <label>Tipo de contrato</label>
-          <select
+          <input
             name="contrato"
             value={formulario.contrato}
-            onChange={cambiarDato}
-          >
-            <option value="">Seleccionar contrato</option>
-            <option value="HC">HC</option>
-            <option value="TC">TC</option>
-            <option value="MT">MT</option>
-            <option value="DIRECTOR">DIRECTOR</option>
-          </select>
-        </div>
-
-        <div className="campo">
-          <label>Asignatura</label>
-          <input
-            name="asignatura"
-            value={formulario.asignatura}
-            onChange={cambiarDato}
-            placeholder="Ej: Derecho civil"
+            readOnly
+            placeholder="Se completa automáticamente"
           />
         </div>
 
-        <div className="campo">
-          <label>Código</label>
-          <input
-            name="codigo"
-            value={formulario.codigo}
-            onChange={cambiarDato}
-            placeholder="Ej: DP046"
-          />
-        </div>
+<div className="campo campo-codigo">
+  <label>Código</label>
+
+  <input
+    type="text"
+    value={busquedaCodigo}
+    onChange={(e) => {
+      const valor = e.target.value.toUpperCase();
+
+      setBusquedaCodigo(valor);
+
+      setFormulario((anterior) => ({
+        ...anterior,
+        codigo: "",
+        asignatura: "",
+      }));
+    }}
+    placeholder="Ej: DB013"
+    autoComplete="off"
+  />
+
+  {cargandoAsignaturas && (
+    <div className="estado-busqueda">Cargando asignaturas...</div>
+  )}
+
+  {!cargandoAsignaturas &&
+    busquedaCodigo.trim() !== "" &&
+    busquedaCodigo !== formulario.codigo && (
+      <div className="resultados-codigo">
+        {asignaturasFiltradas.length > 0 ? (
+          asignaturasFiltradas.map((asignatura) => (
+            <button
+              key={asignatura.id}
+              type="button"
+              className="resultado-codigo"
+              onClick={() => seleccionarAsignatura(asignatura)}
+            >
+              <strong>{asignatura.codigo}</strong>
+              <span>{asignatura.nombre}</span>
+            </button>
+          ))
+        ) : (
+          <div className="estado-busqueda">
+            No se encontraron códigos.
+          </div>
+        )}
+      </div>
+    )}
+</div>
+
+<div className="campo">
+  <label>Asignatura</label>
+
+  <input
+    name="asignatura"
+    value={formulario.asignatura}
+    readOnly
+    placeholder="Se completa al seleccionar el código"
+  />
+</div>
 
         <div className="campo">
           <label>Día</label>
           <select name="dia" value={formulario.dia} onChange={cambiarDato}>
             <option value="">Seleccionar día</option>
+
             {dias.map((dia) => (
               <option key={dia} value={dia}>
                 {dia}
@@ -236,23 +479,23 @@ function FormularioClase({
           />
         </div>
 
-<div className="campo">
-  <label>Programa</label>
+        <div className="campo">
+          <label>Programa</label>
 
-  <select
-    name="programa"
-    value={formulario.programa}
-    onChange={cambiarDato}
-  >
-    <option value="">Seleccionar programa</option>
+          <select
+            name="programa"
+            value={formulario.programa}
+            onChange={cambiarDato}
+          >
+            <option value="">Seleccionar programa</option>
 
-    {programas.map((programa) => (
-      <option key={programa} value={programa}>
-        {programa}
-      </option>
-    ))}
-  </select>
-</div>
+            {programas.map((programa) => (
+              <option key={programa} value={programa}>
+                {programa}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <div className="campo">
           <label>Jornada</label>
