@@ -3,6 +3,7 @@ import Tarjetas from "../components/Tarjetas";
 import FormularioClase from "../components/FormularioClase";
 import TablaClases from "../components/TablaClases";
 import "./Programacion.css";
+import ImportarExcel from "../components/ImportarExcel";
 
 function Programacion({
   clases,
@@ -29,6 +30,9 @@ function Programacion({
         claseEnEdicion={claseEnEdicion}
         onActualizarClase={onActualizarClase}
         onCancelarEdicion={onCancelarEdicion}
+      />
+
+      <ImportarExcel
       />
 
       <TablaClases
