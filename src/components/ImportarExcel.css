@@ -1,0 +1,284 @@
+/* ============================= */
+/* IMPORTACIÓN DESDE EXCEL */
+/* ============================= */
+
+.excel-carga {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+
+  margin-top: 22px;
+  padding: 20px;
+
+  background: #f8f9fb;
+  border: 1px solid #e1e5eb;
+  border-radius: 14px;
+}
+
+.excel-carga-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.excel-carga-info strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 16px;
+  color: #111827;
+}
+
+.excel-carga-info p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.excel-icono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 46px;
+  height: 46px;
+
+  background: white;
+  border: 1px solid #e2e6ec;
+  border-radius: 12px;
+
+  font-size: 23px;
+}
+
+
+/* BOTÓN */
+
+.boton-seleccionar-excel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 170px;
+  padding: 12px 18px;
+
+  background: #980000;
+  color: white;
+
+  border: none;
+  border-radius: 10px;
+
+  font-weight: 600;
+  cursor: pointer;
+
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease;
+}
+
+.boton-seleccionar-excel:hover {
+  background: #7f0000;
+  transform: translateY(-1px);
+}
+
+
+/* ARCHIVO SELECCIONADO */
+
+.archivo-seleccionado {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  margin-top: 14px;
+  padding: 12px 16px;
+
+  background: #f4f7f5;
+  border: 1px solid #d9e3dc;
+  border-radius: 10px;
+}
+
+.archivo-seleccionado > span {
+  font-size: 20px;
+}
+
+.archivo-seleccionado div {
+  display: flex;
+  flex-direction: column;
+}
+
+.archivo-seleccionado small {
+  color: #6b7280;
+  margin-bottom: 2px;
+}
+
+.archivo-seleccionado strong {
+  color: #1f2937;
+}
+
+
+/* SELECTOR DE HOJA */
+
+.selector-hoja-excel {
+  margin-top: 16px;
+}
+
+.selector-hoja-excel select {
+  width: 100%;
+}
+
+
+/* RESUMEN */
+
+.resumen-importacion {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+
+  margin: 22px 0;
+}
+
+.resumen-item {
+  padding: 16px 18px;
+
+  background: #f8f9fb;
+  border: 1px solid #e2e6ec;
+  border-radius: 12px;
+}
+
+.resumen-item span {
+  display: block;
+  margin-bottom: 6px;
+
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.resumen-item strong {
+  font-size: 25px;
+  color: #111827;
+}
+
+.resumen-correcto {
+  border-left: 4px solid #198754;
+}
+
+.resumen-advertencia {
+  border-left: 4px solid #d99a00;
+}
+
+.resumen-error {
+  border-left: 4px solid #c62828;
+}
+
+
+/* TABLA */
+
+.tabla-contenedor {
+  overflow-x: auto;
+}
+
+.tabla-contenedor table {
+  min-width: 1350px;
+}
+
+.tabla-contenedor th {
+  white-space: nowrap;
+}
+
+.tabla-contenedor td {
+  vertical-align: middle;
+}
+
+
+/* ESTADOS */
+
+.estado-importacion {
+  display: inline-block;
+
+  padding: 6px 9px;
+
+  border-radius: 7px;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  white-space: normal;
+}
+
+.estado-correcto {
+  background: #e9f6ee;
+  color: #167341;
+}
+
+.estado-advertencia {
+  background: #fff6dc;
+  color: #936800;
+}
+
+.estado-error {
+  background: #fdecec;
+  color: #a92121;
+}
+
+
+/* RESPONSIVE */
+
+@media (max-width: 900px) {
+  .excel-carga {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .boton-seleccionar-excel {
+    width: 100%;
+  }
+
+  .resumen-importacion {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 550px) {
+  .resumen-importacion {
+    grid-template-columns: 1fr;
+  }
+}
+.acciones-importacion {
+  margin: 20px 0 26px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.boton-importar-clases {
+  padding: 13px 24px;
+
+  background: #980000;
+  color: white;
+
+  border: none;
+  border-radius: 10px;
+
+  font-size: 15px;
+  font-weight: 700;
+
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.boton-importar-clases:hover:not(:disabled) {
+  background: #7c0000;
+  transform: translateY(-1px);
+}
+
+.boton-importar-clases:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.aviso-registros-error {
+  margin: 0;
+  color: #a92121;
+  font-size: 14px;
+  font-weight: 500;
+}

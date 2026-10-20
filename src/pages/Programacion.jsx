@@ -24,16 +24,18 @@ function Programacion({
 
       <Tarjetas totalClases={clases.length} totalCruces={totalCruces} />
 
-      <FormularioClase
-        key={claseEnEdicion?.id || "nueva-clase"}
-        onAgregarClase={onAgregarClase}
-        claseEnEdicion={claseEnEdicion}
-        onActualizarClase={onActualizarClase}
-        onCancelarEdicion={onCancelarEdicion}
-      />
+<FormularioClase
+  key={claseEnEdicion?.id || "nueva-clase"}
+  clases={clases}
+  onAgregarClase={onAgregarClase}
+  claseEnEdicion={claseEnEdicion}
+  onActualizarClase={onActualizarClase}
+  onCancelarEdicion={onCancelarEdicion}
+/>
 
-      <ImportarExcel
-      />
+<ImportarExcel
+  onAgregarClase={onAgregarClase}
+/>
 
       <TablaClases
         clases={clases}

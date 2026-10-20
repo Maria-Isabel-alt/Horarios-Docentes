@@ -2,14 +2,17 @@ import { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../Firebase/config";
+import "./ImportarExcel.css";
 
-function ImportarExcel() {
+function ImportarExcel({ onAgregarClase }) {
   const [archivoNombre, setArchivoNombre] = useState("");
   const [libroExcel, setLibroExcel] = useState(null);
   const [hojas, setHojas] = useState([]);
   const [hojaSeleccionada, setHojaSeleccionada] = useState("");
   const [registros, setRegistros] = useState([]);
   const [mensaje, setMensaje] = useState("");
+  const [guardando, setGuardando] = useState(false);
+const [progreso, setProgreso] = useState(0);
 
   const [docentes, setDocentes] = useState([]);
 const [asignaturas, setAsignaturas] = useState([]);
@@ -42,6 +45,46 @@ useEffect(() => {
 
   cargarCatalogos();
 }, []);
+
+const normalizarEncabezado = (texto = "") =>
+  String(texto)
+    .trim()
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
+
+const convertirHora = (hora) => {
+  if (!hora) return "";
+
+  const texto = String(hora).trim().toUpperCase();
+
+  if (/^\d{2}:\d{2}$/.test(texto)) {
+    return texto;
+  }
+
+  const coincidencia = texto.match(
+    /^(\d{1,2}):(\d{2})\s*(AM|PM)$/
+  );
+
+  if (!coincidencia) {
+    return texto;
+  }
+
+  let [, horas, minutos, periodo] = coincidencia;
+
+  horas = Number(horas);
+
+  if (periodo === "PM" && horas !== 12) {
+    horas += 12;
+  }
+
+  if (periodo === "AM" && horas === 12) {
+    horas = 0;
+  }
+
+  return `${String(horas).padStart(2, "0")}:${minutos}`;
+};
 
 const normalizarPrograma = (programa) => {
   const valor = normalizarEncabezado(programa);
@@ -78,17 +121,21 @@ const validarRegistro = (registro) => {
   const horaInicio = convertirHora(registro.horaInicio);
   const horaFin = convertirHora(registro.horaFin);
 
-  if (!registro.cedula) {
-    errores.push("Falta cédula");
-  } else if (!docente) {
-    errores.push("Docente no encontrado");
-  }
+if (!registro.cedula) {
+  errores.push("Falta cédula");
+} else if (!docente && !registro.docenteExcel) {
+  errores.push("Docente no encontrado");
+} else if (!docente) {
+  advertencias.push("Docente no registrado en catálogo");
+}
 
-  if (!registro.codigo) {
-    errores.push("Falta código");
-  } else if (!asignatura) {
-    errores.push("Código no encontrado");
-  }
+if (!registro.codigo) {
+  errores.push("Falta código");
+} else if (!asignatura && !registro.asignaturaExcel) {
+  errores.push("Código no encontrado");
+} else if (!asignatura) {
+  advertencias.push("Asignatura no registrada en catálogo");
+}
 
   if (!registro.dia) {
     errores.push("Falta día");
@@ -121,13 +168,19 @@ const validarRegistro = (registro) => {
   return {
     ...registro,
 
-    profesor: docente
-      ? `${docente.nombres} ${docente.apellidos}`.trim()
-      : "",
+profesor: docente
+  ? `${docente.nombres} ${docente.apellidos}`.trim()
+  : registro.docenteExcel,
 
-    contrato: docente?.contrato || "",
+contrato:
+  docente?.contrato ||
+  registro.contratoExcel ||
+  "",
 
-    asignatura: asignatura?.nombre || "",
+asignatura:
+  asignatura?.nombre ||
+  registro.asignaturaExcel ||
+  "",
 
     codigo: registro.codigo.toUpperCase(),
 
@@ -143,33 +196,61 @@ const validarRegistro = (registro) => {
   };
 };
 
-const normalizarEncabezado = (texto = "") =>
-  String(texto)
-    .trim()
-    .toUpperCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, " ");
+const convertirFila = (fila) => {
+  const filaNormalizada = {};
 
-  const convertirFila = (fila) => {
-    const filaNormalizada = {};
+  Object.entries(fila).forEach(([clave, valor]) => {
+    filaNormalizada[normalizarEncabezado(clave)] = valor;
+  });
 
-    Object.entries(fila).forEach(([clave, valor]) => {
-      filaNormalizada[normalizarEncabezado(clave)] = valor;
-    });
+  return {
+    cedula: String(filaNormalizada["CEDULA"] || "").trim(),
 
-    return {
-      cedula: String(filaNormalizada["CEDULA"] || "").trim(),
-      codigo: String(filaNormalizada["CODIGO"] || "").trim(),
-      dia: String(filaNormalizada["DIA"] || "").trim(),
-      horaInicio: String(filaNormalizada["HORA INICIO"] || "").trim(),
-      horaFin: String(filaNormalizada["HORA FIN"] || "").trim(),
-      grupo: String(filaNormalizada["GRUPO"] || "").trim(),
-      salon: String(filaNormalizada["SALON ASIGNADO"] || "").trim(),
-      programa: String(filaNormalizada["PROGRAMA"] || "").trim(),
-      jornada: String(filaNormalizada["JORNADA"] || "").trim(),
-    };
+    docenteExcel: String(
+      filaNormalizada["DOCENTE"] || ""
+    ).trim(),
+
+    contratoExcel: String(
+      filaNormalizada["CONTRATO"] || ""
+    ).trim(),
+
+    asignaturaExcel: String(
+      filaNormalizada["ASIGNATURA"] || ""
+    ).trim(),
+
+    codigo: String(
+      filaNormalizada["CODIGO"] || ""
+    ).trim(),
+
+    dia: String(
+      filaNormalizada["DIA"] || ""
+    ).trim(),
+
+    horaInicio: String(
+      filaNormalizada["HORA INICIO"] || ""
+    ).trim(),
+
+    horaFin: String(
+      filaNormalizada["HORA FIN"] || ""
+    ).trim(),
+
+    grupo: String(
+      filaNormalizada["GRUPO"] || ""
+    ).trim(),
+
+    salon: String(
+      filaNormalizada["SALON ASIGNADO"] || ""
+    ).trim(),
+
+    programa: String(
+      filaNormalizada["PROGRAMA"] || ""
+    ).trim(),
+
+    jornada: String(
+      filaNormalizada["JORNADA"] || ""
+    ).trim(),
   };
+};
 
   const leerHoja = (libro, nombreHoja) => {
     const hoja = libro.Sheets[nombreHoja];
@@ -244,6 +325,139 @@ const filasConvertidas = datos
     leerHoja(libroExcel, nombreHoja);
   };
 
+const guardarRegistros = async () => {
+  if (registros.length === 0) {
+    setMensaje("⚠ No hay registros para guardar.");
+    return;
+  }
+
+  if (!onAgregarClase) {
+    setMensaje("❌ No se encontró la función para guardar las clases.");
+    return;
+  }
+
+  const pendientesRevision = registros.filter(
+    (registro) =>
+      registro.errores?.length > 0 ||
+      registro.advertencias?.length > 0
+  ).length;
+
+  const confirmar = window.confirm(
+    `Se guardarán ${registros.length} clases.\n\n` +
+    `${pendientesRevision} quedarán marcadas con alertas para revisión.\n\n` +
+    `¿Deseas continuar?`
+  );
+
+  if (!confirmar) return;
+
+  setGuardando(true);
+  setProgreso(0);
+
+  let guardadas = 0;
+  let fallidas = 0;
+
+  try {
+    for (let i = 0; i < registros.length; i++) {
+      const registro = registros[i];
+
+      const erroresImportacion = registro.errores || [];
+      const advertenciasImportacion = registro.advertencias || [];
+
+      const alertasImportacion = [
+        ...erroresImportacion,
+        ...advertenciasImportacion,
+      ];
+
+      const nuevaClase = {
+        profesor: registro.profesor || "",
+        cedula: registro.cedula || "",
+        contrato: registro.contrato || "",
+        asignatura: registro.asignatura || "",
+        codigo: registro.codigo || "",
+        dia: registro.dia || "",
+        horaInicio: registro.horaInicio || "",
+        horaFin: registro.horaFin || "",
+        grupo: registro.grupo || "",
+        salon: registro.salon || "",
+        programa: registro.programa || "",
+        jornada: registro.jornada || "",
+
+        // Información especial de la importación
+        origen: "excel",
+
+        erroresImportacion,
+        advertenciasImportacion,
+        alertasImportacion,
+
+        requiereRevision: alertasImportacion.length > 0,
+
+        estadoRevision:
+          alertasImportacion.length > 0
+            ? "pendiente"
+            : "correcto",
+
+        id: Date.now() + i,
+      };
+
+      try {
+        await onAgregarClase(nuevaClase);
+        guardadas++;
+      } catch (error) {
+        console.error(
+          `Error guardando registro ${i + 1}:`,
+          error
+        );
+
+        fallidas++;
+      }
+
+      setProgreso(i + 1);
+    }
+
+    if (fallidas === 0) {
+      setMensaje(
+        `✅ Se guardaron ${guardadas} clases. ` +
+        `${pendientesRevision} quedaron pendientes de revisión.`
+      );
+    } else {
+      setMensaje(
+        `⚠ Se guardaron ${guardadas} clases y ${fallidas} no pudieron guardarse.`
+      );
+    }
+  } catch (error) {
+    console.error("Error durante la importación:", error);
+    setMensaje("❌ Ocurrió un error durante la importación.");
+  } finally {
+    setGuardando(false);
+  }
+};
+
+const totalValidos = registros.filter(
+  (registro) => registro.valido
+).length;
+
+const totalPendientesRevision = registros.filter(
+  (registro) =>
+    registro.errores?.length > 0 ||
+    registro.advertencias?.length > 0
+).length;
+
+const totalErrores = registros.filter(
+  (registro) => !registro.valido
+).length;
+
+const totalAdvertencias = registros.filter(
+  (registro) =>
+    registro.valido &&
+    registro.advertencias?.length > 0
+).length;
+
+const totalCorrectos = registros.filter(
+  (registro) =>
+    registro.valido &&
+    registro.advertencias?.length === 0
+).length;
+
   return (
     <section className="panel">
       <h2>Cargar programación desde Excel</h2>
@@ -253,32 +467,49 @@ const filasConvertidas = datos
         guardarlos.
       </p>
 
-      <div>
-        <label>
-          <strong>Seleccionar archivo Excel</strong>
-        </label>
+<div className="excel-carga">
+  <div className="excel-carga-info">
+    <div className="excel-icono">📊</div>
 
-        <input
-          type="file"
-          accept=".xlsx,.xls"
-          onChange={cargarArchivo}
-        />
-      </div>
+    <div>
+      <strong>Cargar archivo Excel</strong>
+      <p>
+        Selecciona un archivo .xlsx o .xls con la programación académica.
+      </p>
+    </div>
+  </div>
 
-      {archivoNombre && (
-        <p>
-          Archivo seleccionado: <strong>{archivoNombre}</strong>
-        </p>
-      )}
+  <label className="boton-seleccionar-excel">
+    Seleccionar archivo
+
+    <input
+      type="file"
+      accept=".xlsx,.xls"
+      onChange={cargarArchivo}
+      hidden
+    />
+  </label>
+</div>
+
+{archivoNombre && (
+  <div className="archivo-seleccionado">
+    <span>✓</span>
+
+    <div>
+      <small>Archivo seleccionado</small>
+      <strong>{archivoNombre}</strong>
+    </div>
+  </div>
+)}
 
       {hojas.length > 0 && (
-        <div className="campo">
-          <label>Hoja del Excel</label>
+<div className="campo selector-hoja-excel">
+  <label>Hoja del Excel</label>
 
-          <select
-            value={hojaSeleccionada}
-            onChange={cambiarHoja}
-          >
+  <select
+    value={hojaSeleccionada}
+    onChange={cambiarHoja}
+  >
             {hojas.map((hoja) => (
               <option key={hoja} value={hoja}>
                 {hoja}
@@ -291,7 +522,47 @@ const filasConvertidas = datos
       {mensaje && <div className="mensaje">{mensaje}</div>}
 
       {registros.length > 0 && (
-        <>
+        <><div className="resumen-importacion">
+  <div className="resumen-item">
+    <span>Total registros</span>
+    <strong>{registros.length}</strong>
+  </div>
+
+  <div className="resumen-item resumen-correcto">
+    <span>Correctos</span>
+    <strong>{totalCorrectos}</strong>
+  </div>
+
+  <div className="resumen-item resumen-advertencia">
+    <span>Advertencias</span>
+    <strong>{totalAdvertencias}</strong>
+  </div>
+
+  <div className="resumen-item resumen-error">
+    <span>Con errores</span>
+    <strong>{totalErrores}</strong>
+  </div>
+</div>
+
+<div className="acciones-importacion">
+  <button
+    type="button"
+    className="boton-importar-clases"
+    onClick={guardarRegistros}
+    disabled={guardando || registros.length === 0}
+  >
+    {guardando
+      ? `Guardando ${progreso} de ${registros.length}...`
+      : `Guardar ${registros.length} clases`}
+  </button>
+
+  {totalPendientesRevision > 0 && (
+    <p className="aviso-registros-error">
+      ⚠ {totalPendientesRevision} registros quedarán pendientes de revisión.
+    </p>
+  )}
+</div>
+
           <h3>Vista previa</h3>
 
           <div className="tabla-contenedor">
@@ -341,19 +612,21 @@ const filasConvertidas = datos
 
       <td>{registro.jornada}</td>
 
-      <td>
-        {registro.errores?.length > 0 ? (
-          <span>
-            ❌ {registro.errores.join(", ")}
-          </span>
-        ) : registro.advertencias?.length > 0 ? (
-          <span>
-            ⚠️ {registro.advertencias.join(", ")}
-          </span>
-        ) : (
-          <span>✅ Correcto</span>
-        )}
-      </td>
+<td>
+  {registro.errores?.length > 0 ? (
+    <span className="estado-importacion estado-error">
+      ✕ {registro.errores.join(", ")}
+    </span>
+  ) : registro.advertencias?.length > 0 ? (
+    <span className="estado-importacion estado-advertencia">
+      ⚠ {registro.advertencias.join(", ")}
+    </span>
+  ) : (
+    <span className="estado-importacion estado-correcto">
+      ✓ Correcto
+    </span>
+  )}
+</td>
     </tr>
   ))}
 </tbody>

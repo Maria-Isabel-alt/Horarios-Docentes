@@ -28,6 +28,7 @@ const estadoInicial = {
 };
 
 function FormularioClase({
+  clases = [],
   onAgregarClase,
   claseEnEdicion,
   onActualizarClase,
@@ -127,47 +128,113 @@ const [cargandoAsignaturas, setCargandoAsignaturas] = useState(true);
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "");
 
+const docentesDesdeClases = Array.from(
+  new Map(
+    clases
+      .filter((clase) => clase.cedula && clase.profesor)
+      .map((clase) => [
+        String(clase.cedula).trim(),
+        {
+          id: `clase-${clase.cedula}`,
+          nombreCompleto: String(clase.profesor || "").trim(),
+          cedula: String(clase.cedula || "").trim(),
+          contrato: clase.contrato || "",
+        },
+      ])
+  ).values()
+);
+
+const docentesCatalogo = docentes
+  .filter((docente) => docente.cedula)
+  .map((docente) => ({
+    ...docente,
+
+    nombreCompleto: `${docente.nombres || ""} ${
+      docente.apellidos || ""
+    }`.trim(),
+  }));
+
+const docentesDisponibles = Array.from(
+  new Map(
+    [...docentesDesdeClases, ...docentesCatalogo].map((docente) => [
+      String(docente.cedula).trim(),
+      docente,
+    ])
+  ).values()
+);
+const asignaturasDesdeClases = Array.from(
+  new Map(
+    clases
+      .filter((clase) => clase.codigo && clase.asignatura)
+      .map((clase) => [
+        String(clase.codigo).trim().toUpperCase(),
+        {
+          id: `clase-${clase.codigo}`,
+          codigo: String(clase.codigo).trim().toUpperCase(),
+          nombre: String(clase.asignatura).trim(),
+        },
+      ])
+  ).values()
+);
+
+const asignaturasDisponibles = Array.from(
+  new Map(
+    [...asignaturasDesdeClases, ...asignaturas]
+      .filter((asignatura) => asignatura.codigo)
+      .map((asignatura) => [
+        String(asignatura.codigo).trim().toUpperCase(),
+        asignatura,
+      ])
+  ).values()
+);
+
   const hayBusqueda =
     busquedaNombre.trim() !== "" ||
     busquedaApellido.trim() !== "" ||
     busquedaCedula.trim() !== "";
 
-  const docentesFiltrados = hayBusqueda
-    ? docentes
-        .filter((docente) => {
-          const nombre = normalizarTexto(docente.nombres);
-          const apellido = normalizarTexto(docente.apellidos);
-          const cedula = String(docente.cedula || "");
+const docentesFiltrados = hayBusqueda
+  ? docentesDisponibles
+      .filter((docente) => {
+        const nombreCompleto = normalizarTexto(
+          docente.nombreCompleto || ""
+        );
 
-          const nombreBuscado = normalizarTexto(busquedaNombre);
-          const apellidoBuscado = normalizarTexto(busquedaApellido);
-          const cedulaBuscada = busquedaCedula.trim();
+        const cedula = String(docente.cedula || "");
 
-          return (
-            nombre.includes(nombreBuscado) &&
-            apellido.includes(apellidoBuscado) &&
-            cedula.includes(cedulaBuscada)
-          );
-        })
-        .slice(0, 10)
-    : [];
+        const nombreBuscado = normalizarTexto(busquedaNombre);
+        const apellidoBuscado = normalizarTexto(busquedaApellido);
+        const cedulaBuscada = busquedaCedula.trim();
 
-  const seleccionarDocente = (docente) => {
-    setFormulario((anterior) => ({
-      ...anterior,
-      profesor: `${docente.nombres} ${docente.apellidos}`.trim(),
-      cedula: docente.cedula || "",
-      contrato: docente.contrato || "",
-    }));
+        return (
+          nombreCompleto.includes(nombreBuscado) &&
+          nombreCompleto.includes(apellidoBuscado) &&
+          cedula.includes(cedulaBuscada)
+        );
+      })
+      .slice(0, 10)
+  : [];
 
-    setBusquedaNombre("");
-    setBusquedaApellido("");
-    setBusquedaCedula("");
-  };
+const seleccionarDocente = (docente) => {
+  setFormulario((anterior) => ({
+    ...anterior,
+
+    profesor:
+      docente.nombreCompleto ||
+      `${docente.nombres || ""} ${docente.apellidos || ""}`.trim(),
+
+    cedula: docente.cedula || "",
+    contrato: docente.contrato || "",
+  }));
+
+  setBusquedaNombre("");
+  setBusquedaApellido("");
+  setBusquedaCedula("");
+};
 
 const asignaturasFiltradas =
   busquedaCodigo.trim() !== ""
-    ? asignaturas
+    ? asignaturasDisponibles
         .filter((asignatura) =>
           String(asignatura.codigo || "")
             .toLowerCase()
@@ -316,9 +383,7 @@ const asignaturasFiltradas =
                     className="resultado-docente"
                     onClick={() => seleccionarDocente(docente)}
                   >
-                    <strong>
-                      {docente.nombres} {docente.apellidos}
-                    </strong>
+<strong>{docente.nombreCompleto}</strong>
 
                     <span>
                       C.C. {docente.cedula} ·{" "}
