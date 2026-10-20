@@ -44,8 +44,8 @@ function FormularioClase({
   const [cargandoDocentes, setCargandoDocentes] = useState(true);
 
   const [asignaturas, setAsignaturas] = useState([]);
-const [busquedaCodigo, setBusquedaCodigo] = useState("");
-const [cargandoAsignaturas, setCargandoAsignaturas] = useState(true);
+  const [busquedaCodigo, setBusquedaCodigo] = useState("");
+  const [cargandoAsignaturas, setCargandoAsignaturas] = useState(true);
 
   useEffect(() => {
     const cargarDocentes = async () => {
@@ -91,36 +91,36 @@ const [cargandoAsignaturas, setCargandoAsignaturas] = useState(true);
       setBusquedaCodigo(claseEnEdicion.codigo || "");
 
       setMensaje(
-        "✏️ Estás editando una clase. Ajusta los datos y guarda los cambios."
+        "✏️ Estás editando una clase. Ajusta los datos y guarda los cambios.",
       );
-} else {
-  setFormulario(estadoInicial);
-  setBusquedaCodigo("");
-  setMensaje("");
-}
+    } else {
+      setFormulario(estadoInicial);
+      setBusquedaCodigo("");
+      setMensaje("");
+    }
   }, [claseEnEdicion]);
 
   useEffect(() => {
-  const cargarAsignaturas = async () => {
-    try {
-      const resultado = await getDocs(collection(db, "asignaturas"));
+    const cargarAsignaturas = async () => {
+      try {
+        const resultado = await getDocs(collection(db, "asignaturas"));
 
-      const lista = resultado.docs.map((documento) => ({
-        id: documento.id,
-        ...documento.data(),
-      }));
+        const lista = resultado.docs.map((documento) => ({
+          id: documento.id,
+          ...documento.data(),
+        }));
 
-      setAsignaturas(lista);
-    } catch (error) {
-      console.error("Error al cargar asignaturas:", error);
-      setMensaje("❌ No se pudieron cargar las asignaturas.");
-    } finally {
-      setCargandoAsignaturas(false);
-    }
-  };
+        setAsignaturas(lista);
+      } catch (error) {
+        console.error("Error al cargar asignaturas:", error);
+        setMensaje("❌ No se pudieron cargar las asignaturas.");
+      } finally {
+        setCargandoAsignaturas(false);
+      }
+    };
 
-  cargarAsignaturas();
-}, []);
+    cargarAsignaturas();
+  }, []);
 
   const normalizarTexto = (texto = "") =>
     texto
@@ -128,130 +128,128 @@ const [cargandoAsignaturas, setCargandoAsignaturas] = useState(true);
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "");
 
-const docentesDesdeClases = Array.from(
-  new Map(
-    clases
-      .filter((clase) => clase.cedula && clase.profesor)
-      .map((clase) => [
-        String(clase.cedula).trim(),
-        {
-          id: `clase-${clase.cedula}`,
-          nombreCompleto: String(clase.profesor || "").trim(),
-          cedula: String(clase.cedula || "").trim(),
-          contrato: clase.contrato || "",
-        },
-      ])
-  ).values()
-);
+  const docentesDesdeClases = Array.from(
+    new Map(
+      clases
+        .filter((clase) => clase.cedula && clase.profesor)
+        .map((clase) => [
+          String(clase.cedula).trim(),
+          {
+            id: `clase-${clase.cedula}`,
+            nombreCompleto: String(clase.profesor || "").trim(),
+            cedula: String(clase.cedula || "").trim(),
+            contrato: clase.contrato || "",
+          },
+        ]),
+    ).values(),
+  );
 
-const docentesCatalogo = docentes
-  .filter((docente) => docente.cedula)
-  .map((docente) => ({
-    ...docente,
+  const docentesCatalogo = docentes
+    .filter((docente) => docente.cedula)
+    .map((docente) => ({
+      ...docente,
 
-    nombreCompleto: `${docente.nombres || ""} ${
-      docente.apellidos || ""
-    }`.trim(),
-  }));
+      nombreCompleto: `${docente.nombres || ""} ${
+        docente.apellidos || ""
+      }`.trim(),
+    }));
 
-const docentesDisponibles = Array.from(
-  new Map(
-    [...docentesDesdeClases, ...docentesCatalogo].map((docente) => [
-      String(docente.cedula).trim(),
-      docente,
-    ])
-  ).values()
-);
-const asignaturasDesdeClases = Array.from(
-  new Map(
-    clases
-      .filter((clase) => clase.codigo && clase.asignatura)
-      .map((clase) => [
-        String(clase.codigo).trim().toUpperCase(),
-        {
-          id: `clase-${clase.codigo}`,
-          codigo: String(clase.codigo).trim().toUpperCase(),
-          nombre: String(clase.asignatura).trim(),
-        },
-      ])
-  ).values()
-);
+  const docentesDisponibles = Array.from(
+    new Map(
+      [...docentesDesdeClases, ...docentesCatalogo].map((docente) => [
+        String(docente.cedula).trim(),
+        docente,
+      ]),
+    ).values(),
+  );
+  const asignaturasDesdeClases = Array.from(
+    new Map(
+      clases
+        .filter((clase) => clase.codigo && clase.asignatura)
+        .map((clase) => [
+          String(clase.codigo).trim().toUpperCase(),
+          {
+            id: `clase-${clase.codigo}`,
+            codigo: String(clase.codigo).trim().toUpperCase(),
+            nombre: String(clase.asignatura).trim(),
+          },
+        ]),
+    ).values(),
+  );
 
-const asignaturasDisponibles = Array.from(
-  new Map(
-    [...asignaturasDesdeClases, ...asignaturas]
-      .filter((asignatura) => asignatura.codigo)
-      .map((asignatura) => [
-        String(asignatura.codigo).trim().toUpperCase(),
-        asignatura,
-      ])
-  ).values()
-);
+  const asignaturasDisponibles = Array.from(
+    new Map(
+      [...asignaturasDesdeClases, ...asignaturas]
+        .filter((asignatura) => asignatura.codigo)
+        .map((asignatura) => [
+          String(asignatura.codigo).trim().toUpperCase(),
+          asignatura,
+        ]),
+    ).values(),
+  );
 
   const hayBusqueda =
     busquedaNombre.trim() !== "" ||
     busquedaApellido.trim() !== "" ||
     busquedaCedula.trim() !== "";
 
-const docentesFiltrados = hayBusqueda
-  ? docentesDisponibles
-      .filter((docente) => {
-        const nombreCompleto = normalizarTexto(
-          docente.nombreCompleto || ""
-        );
+  const docentesFiltrados = hayBusqueda
+    ? docentesDisponibles
+        .filter((docente) => {
+          const nombreCompleto = normalizarTexto(docente.nombreCompleto || "");
 
-        const cedula = String(docente.cedula || "");
+          const cedula = String(docente.cedula || "");
 
-        const nombreBuscado = normalizarTexto(busquedaNombre);
-        const apellidoBuscado = normalizarTexto(busquedaApellido);
-        const cedulaBuscada = busquedaCedula.trim();
+          const nombreBuscado = normalizarTexto(busquedaNombre);
+          const apellidoBuscado = normalizarTexto(busquedaApellido);
+          const cedulaBuscada = busquedaCedula.trim();
 
-        return (
-          nombreCompleto.includes(nombreBuscado) &&
-          nombreCompleto.includes(apellidoBuscado) &&
-          cedula.includes(cedulaBuscada)
-        );
-      })
-      .slice(0, 10)
-  : [];
-
-const seleccionarDocente = (docente) => {
-  setFormulario((anterior) => ({
-    ...anterior,
-
-    profesor:
-      docente.nombreCompleto ||
-      `${docente.nombres || ""} ${docente.apellidos || ""}`.trim(),
-
-    cedula: docente.cedula || "",
-    contrato: docente.contrato || "",
-  }));
-
-  setBusquedaNombre("");
-  setBusquedaApellido("");
-  setBusquedaCedula("");
-};
-
-const asignaturasFiltradas =
-  busquedaCodigo.trim() !== ""
-    ? asignaturasDisponibles
-        .filter((asignatura) =>
-          String(asignatura.codigo || "")
-            .toLowerCase()
-            .includes(busquedaCodigo.trim().toLowerCase())
-        )
+          return (
+            nombreCompleto.includes(nombreBuscado) &&
+            nombreCompleto.includes(apellidoBuscado) &&
+            cedula.includes(cedulaBuscada)
+          );
+        })
         .slice(0, 10)
     : [];
 
-    const seleccionarAsignatura = (asignatura) => {
-  setFormulario((anterior) => ({
-    ...anterior,
-    codigo: asignatura.codigo || "",
-    asignatura: asignatura.nombre || "",
-  }));
+  const seleccionarDocente = (docente) => {
+    setFormulario((anterior) => ({
+      ...anterior,
 
-  setBusquedaCodigo(asignatura.codigo || "");
-};
+      profesor:
+        docente.nombreCompleto ||
+        `${docente.nombres || ""} ${docente.apellidos || ""}`.trim(),
+
+      cedula: docente.cedula || "",
+      contrato: docente.contrato || "",
+    }));
+
+    setBusquedaNombre("");
+    setBusquedaApellido("");
+    setBusquedaCedula("");
+  };
+
+  const asignaturasFiltradas =
+    busquedaCodigo.trim() !== ""
+      ? asignaturasDisponibles
+          .filter((asignatura) =>
+            String(asignatura.codigo || "")
+              .toLowerCase()
+              .includes(busquedaCodigo.trim().toLowerCase()),
+          )
+          .slice(0, 10)
+      : [];
+
+  const seleccionarAsignatura = (asignatura) => {
+    setFormulario((anterior) => ({
+      ...anterior,
+      codigo: asignatura.codigo || "",
+      asignatura: asignatura.nombre || "",
+    }));
+
+    setBusquedaCodigo(asignatura.codigo || "");
+  };
 
   const cambiarDato = (e) => {
     const { name, value } = e.target;
@@ -276,7 +274,7 @@ const asignaturasFiltradas =
       !formulario.grupo
     ) {
       setMensaje(
-        "⚠ Debes llenar profesor, cédula, contrato, asignatura, día, hora y grupo."
+        "⚠ Debes llenar profesor, cédula, contrato, asignatura, día, hora y grupo.",
       );
       return;
     }
@@ -383,7 +381,7 @@ const asignaturasFiltradas =
                     className="resultado-docente"
                     onClick={() => seleccionarDocente(docente)}
                   >
-<strong>{docente.nombreCompleto}</strong>
+                    <strong>{docente.nombreCompleto}</strong>
 
                     <span>
                       C.C. {docente.cedula} ·{" "}
@@ -405,17 +403,19 @@ const asignaturasFiltradas =
           <input
             name="profesor"
             value={formulario.profesor}
-            readOnly
+            onChange={cambiarDato}
+            readOnly={!claseEnEdicion}
             placeholder="Selecciona un docente"
           />
         </div>
 
         <div className="campo">
-          <label>Cédula del profesor</label>
+          <label>Tipo de contrato</label>
           <input
-            name="cedula"
-            value={formulario.cedula}
-            readOnly
+            name="contrato"
+            value={formulario.contrato}
+            onChange={cambiarDato}
+            readOnly={!claseEnEdicion}
             placeholder="Se completa automáticamente"
           />
         </div>
@@ -430,66 +430,67 @@ const asignaturasFiltradas =
           />
         </div>
 
-<div className="campo campo-codigo">
-  <label>Código</label>
+        <div className="campo campo-codigo">
+          <label>Código</label>
 
-  <input
-    type="text"
-    value={busquedaCodigo}
-    onChange={(e) => {
-      const valor = e.target.value.toUpperCase();
+          <input
+            type="text"
+            value={busquedaCodigo}
+            onChange={(e) => {
+              const valor = e.target.value.toUpperCase();
 
-      setBusquedaCodigo(valor);
+              setBusquedaCodigo(valor);
 
-      setFormulario((anterior) => ({
-        ...anterior,
-        codigo: "",
-        asignatura: "",
-      }));
-    }}
-    placeholder="Ej: DB013"
-    autoComplete="off"
-  />
+              setFormulario((anterior) => ({
+                ...anterior,
+                codigo: "",
+                asignatura: "",
+              }));
+            }}
+            placeholder="Ej: DB013"
+            autoComplete="off"
+          />
 
-  {cargandoAsignaturas && (
-    <div className="estado-busqueda">Cargando asignaturas...</div>
-  )}
+          {cargandoAsignaturas && (
+            <div className="estado-busqueda">Cargando asignaturas...</div>
+          )}
 
-  {!cargandoAsignaturas &&
-    busquedaCodigo.trim() !== "" &&
-    busquedaCodigo !== formulario.codigo && (
-      <div className="resultados-codigo">
-        {asignaturasFiltradas.length > 0 ? (
-          asignaturasFiltradas.map((asignatura) => (
-            <button
-              key={asignatura.id}
-              type="button"
-              className="resultado-codigo"
-              onClick={() => seleccionarAsignatura(asignatura)}
-            >
-              <strong>{asignatura.codigo}</strong>
-              <span>{asignatura.nombre}</span>
-            </button>
-          ))
-        ) : (
-          <div className="estado-busqueda">
-            No se encontraron códigos.
-          </div>
-        )}
-      </div>
-    )}
-</div>
+          {!cargandoAsignaturas &&
+            busquedaCodigo.trim() !== "" &&
+            busquedaCodigo !== formulario.codigo && (
+              <div className="resultados-codigo">
+                {asignaturasFiltradas.length > 0 ? (
+                  asignaturasFiltradas.map((asignatura) => (
+                    <button
+                      key={asignatura.id}
+                      type="button"
+                      className="resultado-codigo"
+                      onClick={() => seleccionarAsignatura(asignatura)}
+                    >
+                      <strong>{asignatura.codigo}</strong>
+                      <span>{asignatura.nombre}</span>
+                    </button>
+                  ))
+                ) : (
+                  <div className="estado-busqueda">
+                    No se encontraron códigos.
+                  </div>
+                )}
+              </div>
+            )}
+        </div>
 
-<div className="campo">
-  <label>Asignatura</label>
+        <div className="campo">
+          <label>Asignatura</label>
 
-  <input
-    name="asignatura"
-    value={formulario.asignatura}
-    readOnly
-    placeholder="Se completa al seleccionar el código"
-  />
-</div>
+          <input
+            name="asignatura"
+            value={formulario.asignatura}
+            onChange={cambiarDato}
+            readOnly={!claseEnEdicion}
+            placeholder="Se completa al seleccionar el código"
+          />
+        </div>
 
         <div className="campo">
           <label>Día</label>
