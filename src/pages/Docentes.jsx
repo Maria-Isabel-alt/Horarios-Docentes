@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../Firebase/config";
 
@@ -6,7 +6,7 @@ import Encabezado from "../components/Encabezado";
 import "./Docentes.css";
 
 function Docentes({ clases = [] }) {
-  const [docentes, setDocentes] = useState([]);
+  const [docentesFirebase, setDocentesFirebase] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
 
@@ -15,14 +15,12 @@ function Docentes({ clases = [] }) {
       try {
         const resultado = await getDocs(collection(db, "docentes"));
 
-const listaDocentes = resultado.docs.map((documento) => ({
-  id: documento.id,
-  ...documento.data(),
-}));
+        const listaDocentes = resultado.docs.map((documento) => ({
+          id: documento.id,
+          ...documento.data(),
+        }));
 
-console.log("DOCENTES FIREBASE:", listaDocentes);
-
-setDocentes(listaDocentes);
+        setDocentesFirebase(listaDocentes);
       } catch (error) {
         console.error("Error al cargar docentes:", error);
         setError("No se pudieron cargar los docentes.");
@@ -34,21 +32,110 @@ setDocentes(listaDocentes);
     cargarDocentes();
   }, []);
 
-  const obtenerTotalClases = (cedula) => {
-    return clases.filter((clase) => clase.cedula === cedula).length;
-  };
+  const normalizar = (valor) => String(valor || "").trim();
 
-  const obtenerProgramas = (cedula) => {
-    const programas = clases
-      .filter((clase) => clase.cedula === cedula && clase.programa)
-      .map((clase) => clase.programa);
+  const docentes = useMemo(() => {
+    const mapa = new Map();
 
-    const programasUnicos = [...new Set(programas)];
+    /*
+     * 1. DOCENTES OBTENIDOS DE LAS CLASES
+     */
+    clases.forEach((clase) => {
+      const cedula = normalizar(clase.cedula);
+      const profesor = normalizar(clase.profesor);
 
-    return programasUnicos.length > 0
-      ? programasUnicos.join(", ")
-      : "Sin clases asignadas";
-  };
+      // Ignoramos registros sin identificación útil
+      if (
+        !cedula ||
+        cedula.toLowerCase() === "na" ||
+        cedula.toLowerCase() === "n/a"
+      ) {
+        return;
+      }
+
+      if (!mapa.has(cedula)) {
+        mapa.set(cedula, {
+          id: `clase-${cedula}`,
+          nombre: profesor || "Sin nombre",
+          cedula,
+          contrato: normalizar(clase.contrato) || "Sin dato",
+          programas: new Set(),
+          totalClases: 0,
+          origen: "clases",
+        });
+      }
+
+      const docente = mapa.get(cedula);
+
+      docente.totalClases += 1;
+
+      if (clase.programa) {
+        docente.programas.add(normalizar(clase.programa));
+      }
+
+      // Si inicialmente estaba vacío, aprovechar datos de otra clase
+      if (docente.nombre === "Sin nombre" && profesor) {
+        docente.nombre = profesor;
+      }
+
+      if (docente.contrato === "Sin dato" && clase.contrato) {
+        docente.contrato = normalizar(clase.contrato);
+      }
+    });
+
+    /*
+     * 2. DOCENTES REGISTRADOS DIRECTAMENTE EN FIREBASE
+     */
+    docentesFirebase.forEach((docenteFirebase) => {
+      const cedula = normalizar(docenteFirebase.cedula);
+
+      if (!cedula) return;
+
+      const nombreFirebase = `${docenteFirebase.nombres || ""} ${
+        docenteFirebase.apellidos || ""
+      }`.trim();
+
+      if (mapa.has(cedula)) {
+        const docenteExistente = mapa.get(cedula);
+
+        // Firebase tiene prioridad como catálogo oficial
+        if (nombreFirebase) {
+          docenteExistente.nombre = nombreFirebase;
+        }
+
+        if (docenteFirebase.contrato) {
+          docenteExistente.contrato = docenteFirebase.contrato;
+        }
+
+        docenteExistente.origen = "firebase";
+        docenteExistente.id = docenteFirebase.id;
+      } else {
+        mapa.set(cedula, {
+          id: docenteFirebase.id,
+          nombre: nombreFirebase || "Sin nombre",
+          cedula,
+          contrato: docenteFirebase.contrato || "Sin dato",
+          programas: new Set(),
+          totalClases: 0,
+          origen: "firebase",
+        });
+      }
+    });
+
+    return Array.from(mapa.values())
+      .map((docente) => ({
+        ...docente,
+        programasTexto:
+          docente.programas.size > 0
+            ? Array.from(docente.programas).join(", ")
+            : "Sin clases asignadas",
+      }))
+      .sort((a, b) =>
+        a.nombre.localeCompare(b.nombre, "es", {
+          sensitivity: "base",
+        }),
+      );
+  }, [clases, docentesFirebase]);
 
   return (
     <>
@@ -58,7 +145,13 @@ setDocentes(listaDocentes);
       />
 
       <section className="panel">
-        <h2>Docentes registrados</h2>
+        <div className="panel-header-tabla">
+          <div>
+            <h2>Docentes registrados</h2>
+
+            <p>Se encontraron {docentes.length} docentes.</p>
+          </div>
+        </div>
 
         {cargando ? (
           <p className="vacio">Cargando docentes...</p>
@@ -81,18 +174,16 @@ setDocentes(listaDocentes);
 
               <tbody>
                 {docentes.map((docente) => (
-                  <tr key={docente.id}>
-                    <td>
-                      {docente.nombres} {docente.apellidos}
-                    </td>
+                  <tr key={docente.cedula}>
+                    <td>{docente.nombre}</td>
 
                     <td>{docente.cedula}</td>
 
-                    <td>{docente.contrato || "Sin dato"}</td>
+                    <td>{docente.contrato}</td>
 
-                    <td>{obtenerProgramas(docente.cedula)}</td>
+                    <td>{docente.programasTexto}</td>
 
-                    <td>{obtenerTotalClases(docente.cedula)}</td>
+                    <td>{docente.totalClases}</td>
                   </tr>
                 ))}
               </tbody>
