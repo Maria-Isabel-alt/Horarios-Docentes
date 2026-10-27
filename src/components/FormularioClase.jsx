@@ -421,11 +421,12 @@ function FormularioClase({
         </div>
 
         <div className="campo">
-          <label>Tipo de contrato</label>
+          <label>Cédula</label>
           <input
-            name="contrato"
-            value={formulario.contrato}
-            readOnly
+            name="cedula"
+            value={formulario.cedula}
+            onChange={cambiarDato}
+            readOnly={!claseEnEdicion}
             placeholder="Se completa automáticamente"
           />
         </div>
