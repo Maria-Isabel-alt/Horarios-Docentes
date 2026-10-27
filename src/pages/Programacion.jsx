@@ -33,7 +33,11 @@ function Programacion({
         onCancelarEdicion={onCancelarEdicion}
       />
 
-      <ImportarExcel onAgregarClase={onAgregarClase} />
+      <ImportarExcel
+        clases={clases}
+        onAgregarClase={onAgregarClase}
+        onEliminarClase={onEliminarClase}
+      />
 
       <TablaClases
         clases={clases}

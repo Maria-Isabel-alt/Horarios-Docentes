@@ -113,8 +113,6 @@ function Alertas({ clases = [], clasesBase = [], totalClases, onEditarClase }) {
     coincideBusqueda(clase),
   );
 
-  const totalIncidencias = conflictos.length + datosPendientes.length;
-
   const nombreTipoCruce = (tipo) => {
     if (tipo === "profesor") {
       return "Profesor";
@@ -146,7 +144,7 @@ function Alertas({ clases = [], clasesBase = [], totalClases, onEditarClase }) {
 
       <Tarjetas
         totalClases={totalClases ?? todasLasClases.length}
-        totalCruces={totalIncidencias}
+        totalCruces={conflictos.length}
       />
 
       <section className="panel alertas-panel">
@@ -177,11 +175,6 @@ function Alertas({ clases = [], clasesBase = [], totalClases, onEditarClase }) {
           <div className="resumen-alerta-card">
             <span>Clases con datos pendientes</span>
             <strong>{datosPendientes.length}</strong>
-          </div>
-
-          <div className="resumen-alerta-card">
-            <span>Total incidencias</span>
-            <strong>{totalIncidencias}</strong>
           </div>
         </div>
 

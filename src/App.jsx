@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import "./App.css";
 
@@ -11,7 +11,7 @@ import Alertas from "./pages/Alertas";
 import ClasesRegistradas from "./pages/ClasesRegistradas";
 
 import { auth } from "./Firebase/config";
-import { obtenerAlertas } from "./utils/horarios";
+import { obtenerConflictos } from "./utils/horarios";
 
 import {
   escucharClasesDelUsuario,
@@ -58,43 +58,50 @@ function App() {
   };
 
   const editarClase = (clase) => {
-  setClaseEnEdicion(clase);
-  setPestanaActiva("programacion");
-};
+    setClaseEnEdicion(clase);
+    setPestanaActiva("programacion");
+  };
 
-const actualizarClase = async (claseEditada) => {
-  await actualizarClaseFirestore(claseEditada.id, claseEditada);
-  setClaseEnEdicion(null);
-};
-
-const cancelarEdicion = () => {
-  setClaseEnEdicion(null);
-};
-
-const eliminarClase = async (id) => {
-  await eliminarClaseFirestore(id);
-
-  if (claseEnEdicion?.id === id) {
+  const actualizarClase = async (claseEditada) => {
+    await actualizarClaseFirestore(claseEditada.id, claseEditada);
     setClaseEnEdicion(null);
-  }
-};
+  };
 
-  const totalCruces = clases.filter(
-    (clase) => obtenerAlertas(clase, clases).length > 0
-  ).length;
+  const cancelarEdicion = () => {
+    setClaseEnEdicion(null);
+  };
 
-  const clasesConCruce = clases.filter(
-    (clase) => obtenerAlertas(clase, clases).length > 0
-  );
+  const eliminarClase = async (id) => {
+    await eliminarClaseFirestore(id);
 
-const menu = [
-  { id: "programacion", texto: "Programación" },
-  { id: "clases", texto: "Clases registradas" },
-  { id: "alertas", texto: "Alertas" },
-  { id: "docentes", texto: "Docentes" },
-  { id: "grupos", texto: "Grupos" },
-  { id: "asignaturas", texto: "Asignaturas" },
-];
+    if (claseEnEdicion?.id === id) {
+      setClaseEnEdicion(null);
+    }
+  };
+
+  const conflictos = useMemo(() => obtenerConflictos(clases), [clases]);
+
+  const totalCruces = conflictos.length;
+
+  const clasesConCruce = useMemo(() => {
+    const ids = new Set();
+
+    conflictos.forEach((conflicto) => {
+      ids.add(conflicto.claseA.id);
+      ids.add(conflicto.claseB.id);
+    });
+
+    return clases.filter((clase) => ids.has(clase.id));
+  }, [clases, conflictos]);
+
+  const menu = [
+    { id: "programacion", texto: "Programación" },
+    { id: "clases", texto: "Clases registradas" },
+    { id: "alertas", texto: "Alertas" },
+    { id: "docentes", texto: "Docentes" },
+    { id: "grupos", texto: "Grupos" },
+    { id: "asignaturas", texto: "Asignaturas" },
+  ];
 
   if (cargando) {
     return <div className="pantalla-carga">Cargando...</div>;
@@ -133,45 +140,44 @@ const menu = [
       </aside>
 
       <main className="contenido">
+        {pestanaActiva === "docentes" && <Docentes clases={clases} />}
 
-{pestanaActiva === "docentes" && <Docentes clases={clases} />}
+        {pestanaActiva === "grupos" && <Grupos clases={clases} />}
 
-{pestanaActiva === "grupos" && <Grupos clases={clases} />}
+        {pestanaActiva === "asignaturas" && <Asignaturas clases={clases} />}
 
-{pestanaActiva === "asignaturas" && <Asignaturas clases={clases} />}
+        {pestanaActiva === "programacion" && (
+          <Programacion
+            clases={clases}
+            totalCruces={totalCruces}
+            onAgregarClase={agregarClase}
+            onEliminarClase={eliminarClase}
+            onEditarClase={editarClase}
+            claseEnEdicion={claseEnEdicion}
+            onActualizarClase={actualizarClase}
+            onCancelarEdicion={cancelarEdicion}
+          />
+        )}
 
-{pestanaActiva === "programacion" && (
-  <Programacion
-    clases={clases}
-    totalCruces={totalCruces}
-    onAgregarClase={agregarClase}
-    onEliminarClase={eliminarClase}
-    onEditarClase={editarClase}
-    claseEnEdicion={claseEnEdicion}
-    onActualizarClase={actualizarClase}
-    onCancelarEdicion={cancelarEdicion}
-  />
-)}
-        
-{pestanaActiva === "clases" && (
-  <ClasesRegistradas
-    clases={clases}
-    totalCruces={totalCruces}
-    onEliminarClase={eliminarClase}
-    onEditarClase={editarClase}
-  />
-)}
+        {pestanaActiva === "clases" && (
+          <ClasesRegistradas
+            clases={clases}
+            totalCruces={totalCruces}
+            onEliminarClase={eliminarClase}
+            onEditarClase={editarClase}
+          />
+        )}
 
-{pestanaActiva === "alertas" && (
-  <Alertas
-    clases={clasesConCruce}
-    clasesBase={clases}
-    totalClases={clases.length}
-    totalCruces={totalCruces}
-    onEliminarClase={eliminarClase}
-    onEditarClase={editarClase}
-  />
-)}
+        {pestanaActiva === "alertas" && (
+          <Alertas
+            clases={clasesConCruce}
+            clasesBase={clases}
+            totalClases={clases.length}
+            totalCruces={totalCruces}
+            onEliminarClase={eliminarClase}
+            onEditarClase={editarClase}
+          />
+        )}
       </main>
     </div>
   );

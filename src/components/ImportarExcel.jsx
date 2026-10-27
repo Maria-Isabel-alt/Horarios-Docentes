@@ -4,7 +4,7 @@ import { collection, getDocs } from "firebase/firestore";
 import { db } from "../Firebase/config";
 import "./ImportarExcel.css";
 
-function ImportarExcel({ onAgregarClase }) {
+function ImportarExcel({ onAgregarClase, onEliminarClase, clases = [] }) {
   const [archivoNombre, setArchivoNombre] = useState("");
   const [libroExcel, setLibroExcel] = useState(null);
   const [hojas, setHojas] = useState([]);
@@ -13,6 +13,8 @@ function ImportarExcel({ onAgregarClase }) {
   const [mensaje, setMensaje] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [progreso, setProgreso] = useState(0);
+  const [eliminando, setEliminando] = useState(false);
+  const [confirmacion, setConfirmacion] = useState(null);
 
   const [docentes, setDocentes] = useState([]);
   const [asignaturas, setAsignaturas] = useState([]);
@@ -292,6 +294,26 @@ function ImportarExcel({ onAgregarClase }) {
     leerHoja(libroExcel, nombreHoja);
   };
 
+  const solicitarGuardarRegistros = () => {
+    if (registros.length === 0) {
+      setMensaje("⚠ No hay registros para guardar.");
+      return;
+    }
+
+    const pendientesRevision = registros.filter(
+      (registro) =>
+        registro.errores?.length > 0 || registro.advertencias?.length > 0,
+    ).length;
+
+    setConfirmacion({
+      tipo: "guardar",
+      titulo: "Guardar programación",
+      mensaje: "¿Deseas guardar las clases importadas desde el archivo Excel?",
+      cantidad: registros.length,
+      pendientes: pendientesRevision,
+    });
+  };
+
   const guardarRegistros = async () => {
     if (registros.length === 0) {
       setMensaje("⚠ No hay registros para guardar.");
@@ -307,14 +329,6 @@ function ImportarExcel({ onAgregarClase }) {
       (registro) =>
         registro.errores?.length > 0 || registro.advertencias?.length > 0,
     ).length;
-
-    const confirmar = window.confirm(
-      `Se guardarán ${registros.length} clases.\n\n` +
-        `${pendientesRevision} quedarán marcadas con alertas para revisión.\n\n` +
-        `¿Deseas continuar?`,
-    );
-
-    if (!confirmar) return;
 
     setGuardando(true);
     setProgreso(0);
@@ -410,6 +424,59 @@ function ImportarExcel({ onAgregarClase }) {
     (registro) => registro.valido && registro.advertencias?.length === 0,
   ).length;
 
+  const solicitarEliminarImportacion = () => {
+    const clasesImportadas = clases.filter((clase) => clase.origen === "excel");
+
+    if (clasesImportadas.length === 0) {
+      setMensaje("No hay clases importadas desde Excel para eliminar.");
+      return;
+    }
+
+    setConfirmacion({
+      tipo: "eliminar",
+      titulo: "Eliminar importación",
+      mensaje:
+        "¿Seguro que deseas eliminar todas las clases importadas desde Excel?",
+      cantidad: clasesImportadas.length,
+    });
+  };
+
+  const eliminarClasesImportadas = async () => {
+    const clasesImportadas = clases.filter((clase) => clase.origen === "excel");
+
+    setEliminando(true);
+
+    let eliminadas = 0;
+    let fallidas = 0;
+
+    try {
+      for (const clase of clasesImportadas) {
+        try {
+          await onEliminarClase(clase.id);
+          eliminadas++;
+        } catch (error) {
+          console.error("Error eliminando clase:", clase.id, error);
+          fallidas++;
+        }
+      }
+
+      if (fallidas === 0) {
+        setMensaje(
+          `✅ Se eliminaron ${eliminadas} clases importadas desde Excel.`,
+        );
+      } else {
+        setMensaje(
+          `⚠ Se eliminaron ${eliminadas} clases y ${fallidas} no pudieron eliminarse.`,
+        );
+      }
+    } catch (error) {
+      console.error("Error eliminando importación:", error);
+      setMensaje("❌ Ocurrió un error al eliminar la importación.");
+    } finally {
+      setEliminando(false);
+    }
+  };
+
   return (
     <section className="panel">
       <h2>Cargar programación desde Excel</h2>
@@ -441,6 +508,26 @@ function ImportarExcel({ onAgregarClase }) {
           />
         </label>
       </div>
+
+      {clases.some((clase) => clase.origen === "excel") && (
+        <div className="zona-eliminar-importacion">
+          <button
+            type="button"
+            className="boton-eliminar-importacion"
+            onClick={solicitarEliminarImportacion}
+            disabled={eliminando}
+          >
+            {eliminando
+              ? "Eliminando clases importadas..."
+              : "Eliminar clases importadas desde Excel"}
+          </button>
+
+          <p>
+            Solo elimina las clases cargadas mediante Excel. Las clases creadas
+            manualmente se conservan.
+          </p>
+        </div>
+      )}
 
       {archivoNombre && (
         <div className="archivo-seleccionado">
@@ -497,7 +584,7 @@ function ImportarExcel({ onAgregarClase }) {
             <button
               type="button"
               className="boton-importar-clases"
-              onClick={guardarRegistros}
+              onClick={solicitarGuardarRegistros}
               disabled={guardando || registros.length === 0}
             >
               {guardando
@@ -587,6 +674,82 @@ function ImportarExcel({ onAgregarClase }) {
             <p>Mostrando los primeros 20 de {registros.length} registros.</p>
           )}
         </>
+      )}
+
+      {confirmacion && (
+        <div className="modal-fondo">
+          <div className="modal-confirmacion">
+            <div className="modal-icono">
+              {confirmacion.tipo === "eliminar" ? "⚠️" : "📊"}
+            </div>
+
+            <h3>{confirmacion.titulo}</h3>
+
+            <p>{confirmacion.mensaje}</p>
+
+            <div className="detalle-importacion-modal">
+              <strong>
+                {confirmacion.cantidad} clases
+                {confirmacion.tipo === "eliminar"
+                  ? " serán eliminadas"
+                  : " serán guardadas"}
+              </strong>
+
+              {confirmacion.tipo === "guardar" &&
+                confirmacion.pendientes > 0 && (
+                  <span>
+                    ⚠ {confirmacion.pendientes} quedarán pendientes de revisión.
+                  </span>
+                )}
+
+              {confirmacion.tipo === "eliminar" && (
+                <>
+                  <span>Las clases creadas manualmente se conservarán.</span>
+
+                  <span className="texto-peligro">
+                    Esta acción no se puede deshacer.
+                  </span>
+                </>
+              )}
+            </div>
+
+            <div className="modal-botones">
+              <button
+                type="button"
+                className="btn-cancelar-modal"
+                onClick={() => setConfirmacion(null)}
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                className={
+                  confirmacion.tipo === "eliminar"
+                    ? "btn-eliminar-modal"
+                    : "btn-confirmar-importacion"
+                }
+                onClick={() => {
+                  const tipo = confirmacion.tipo;
+
+                  setConfirmacion(null);
+
+                  if (tipo === "guardar") {
+                    guardarRegistros();
+                  }
+
+                  if (tipo === "eliminar") {
+                    eliminarClasesImportadas();
+                  }
+                }}
+              >
+                {confirmacion.tipo === "eliminar"
+                  ? "Sí, eliminar"
+                  : "Sí, guardar"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </section>
   );

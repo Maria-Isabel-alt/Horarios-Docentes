@@ -282,3 +282,48 @@
   font-size: 14px;
   font-weight: 500;
 }
+
+.zona-eliminar-importacion {
+  margin-top: 20px;
+  padding: 16px 18px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  background: #fff7f7;
+  border: 1px solid #efcaca;
+  border-radius: 12px;
+}
+
+.zona-eliminar-importacion p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.boton-eliminar-importacion {
+  flex-shrink: 0;
+
+  padding: 11px 16px;
+
+  border: 1px solid #dc2626;
+  border-radius: 9px;
+
+  background: white;
+  color: #b91c1c;
+
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.boton-eliminar-importacion:hover:not(:disabled) {
+  background: #dc2626;
+  color: white;
+}
+
+.boton-eliminar-importacion:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
