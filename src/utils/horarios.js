@@ -1,5 +1,9 @@
 export function normalizar(valor) {
-  return String(valor || "").trim().toLowerCase();
+  return String(valor || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 }
 
 export function esValorValido(valor) {
@@ -15,6 +19,19 @@ export function esValorValido(valor) {
     "no aplica",
     "-",
   ].includes(texto);
+}
+
+export function programaNoRequiereSalon(programa) {
+  const programaNormalizado = normalizar(programa);
+
+  return [
+    "derecho virtual",
+    "ciencia politica virtual",
+
+    // En tu Excel también aparece simplemente como CIENCIA POLITICA.
+    // Si ese programa corresponde al virtual, lo dejamos incluido.
+    "ciencia politica",
+  ].includes(programaNormalizado);
 }
 
 export function horaAMinutos(valor) {
@@ -41,9 +58,7 @@ export function horaAMinutos(valor) {
   }
 
   // 7:00 AM / 1:00 PM
-  coincidencia = texto.match(
-    /^(\d{1,2}):(\d{2})\s*(AM|PM)$/
-  );
+  coincidencia = texto.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/);
 
   if (coincidencia) {
     let hora = Number(coincidencia[1]);
@@ -76,10 +91,7 @@ export function horaAMinutos(valor) {
 }
 
 export function hayCruce(claseA, claseB) {
-  if (
-    normalizar(claseA.dia) !==
-    normalizar(claseB.dia)
-  ) {
+  if (normalizar(claseA.dia) !== normalizar(claseB.dia)) {
     return false;
   }
 
@@ -89,12 +101,7 @@ export function hayCruce(claseA, claseB) {
   const inicioB = horaAMinutos(claseB.horaInicio);
   const finB = horaAMinutos(claseB.horaFin);
 
-  if (
-    inicioA === null ||
-    finA === null ||
-    inicioB === null ||
-    finB === null
-  ) {
+  if (inicioA === null || finA === null || inicioB === null || finB === null) {
     return false;
   }
 
@@ -106,20 +113,14 @@ export function esMismoProfesor(claseA, claseB) {
   const cedulaB = normalizar(claseB.cedula);
 
   // Preferimos identificar al profesor por cédula
-  if (
-    esValorValido(cedulaA) &&
-    esValorValido(cedulaB)
-  ) {
+  if (esValorValido(cedulaA) && esValorValido(cedulaB)) {
     return cedulaA === cedulaB;
   }
 
   const profesorA = normalizar(claseA.profesor);
   const profesorB = normalizar(claseB.profesor);
 
-  if (
-    !esValorValido(profesorA) ||
-    !esValorValido(profesorB)
-  ) {
+  if (!esValorValido(profesorA) || !esValorValido(profesorB)) {
     return false;
   }
 
@@ -127,31 +128,27 @@ export function esMismoProfesor(claseA, claseB) {
 }
 
 export function esMismoGrupo(claseA, claseB) {
-  if (
-    !esValorValido(claseA.grupo) ||
-    !esValorValido(claseB.grupo)
-  ) {
+  if (!esValorValido(claseA.grupo) || !esValorValido(claseB.grupo)) {
     return false;
   }
 
-  return (
-    normalizar(claseA.grupo) ===
-    normalizar(claseB.grupo)
-  );
+  return normalizar(claseA.grupo) === normalizar(claseB.grupo);
 }
 
 export function esMismoSalon(claseA, claseB) {
+  // Los programas virtuales no utilizan salón
   if (
-    !esValorValido(claseA.salon) ||
-    !esValorValido(claseB.salon)
+    programaNoRequiereSalon(claseA.programa) ||
+    programaNoRequiereSalon(claseB.programa)
   ) {
     return false;
   }
 
-  return (
-    normalizar(claseA.salon) ===
-    normalizar(claseB.salon)
-  );
+  if (!esValorValido(claseA.salon) || !esValorValido(claseB.salon)) {
+    return false;
+  }
+
+  return normalizar(claseA.salon) === normalizar(claseB.salon);
 }
 
 /*
@@ -193,12 +190,16 @@ export function obtenerProblemasDatos(clase) {
     problemas.push("Grupo pendiente");
   }
 
-  if (!esValorValido(clase.salon)) {
+  if (!programaNoRequiereSalon(clase.programa) && !esValorValido(clase.salon)) {
     problemas.push("Salón pendiente");
   }
 
   if (!esValorValido(clase.programa)) {
     problemas.push("Programa pendiente");
+  }
+
+  if (!esValorValido(clase.jornada)) {
+    problemas.push("Jornada pendiente");
   }
 
   return problemas;
@@ -234,20 +235,11 @@ export function obtenerTiposCruce(claseA, claseB) {
  * Devuelve con cuáles clases choca
  * una clase concreta.
  */
-export function obtenerCrucesDeClase(
-  claseActual,
-  clases
-) {
+export function obtenerCrucesDeClase(claseActual, clases) {
   return clases
-    .filter(
-      (otraClase) =>
-        otraClase.id !== claseActual.id
-    )
+    .filter((otraClase) => otraClase.id !== claseActual.id)
     .map((otraClase) => {
-      const tipos = obtenerTiposCruce(
-        claseActual,
-        otraClase
-      );
+      const tipos = obtenerTiposCruce(claseActual, otraClase);
 
       return {
         clase: otraClase,
@@ -262,14 +254,9 @@ export function obtenerCrucesDeClase(
  * Ahora incluye cruces + problemas de datos.
  */
 export function obtenerAlertas(claseActual, clases) {
-  const alertas = [
-    ...obtenerProblemasDatos(claseActual),
-  ];
+  const alertas = [...obtenerProblemasDatos(claseActual)];
 
-  const cruces = obtenerCrucesDeClase(
-    claseActual,
-    clases
-  );
+  const cruces = obtenerCrucesDeClase(claseActual, clases);
 
   cruces.forEach(({ tipos }) => {
     tipos.forEach((tipo) => {
@@ -302,10 +289,7 @@ export function obtenerConflictos(clases = []) {
       const claseA = clases[i];
       const claseB = clases[j];
 
-      const tipos = obtenerTiposCruce(
-        claseA,
-        claseB
-      );
+      const tipos = obtenerTiposCruce(claseA, claseB);
 
       if (tipos.length === 0) {
         continue;
