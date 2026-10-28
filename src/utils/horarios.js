@@ -21,6 +21,36 @@ export function esValorValido(valor) {
   ].includes(texto);
 }
 
+export function esClaseVirtual(clase) {
+  const programa = normalizar(clase.programa);
+  const asignatura = normalizar(clase.asignatura);
+  const grupo = normalizar(clase.grupo);
+
+  // Programas reconocidos directamente como virtuales
+  if (
+    programa === "derecho virtual" ||
+    programa === "ciencia politica virtual"
+  ) {
+    return true;
+  }
+
+  // Algunos Excel antiguos indican la virtualidad en la asignatura
+  if (asignatura.includes("virtual")) {
+    return true;
+  }
+
+  // Grupos utilizados para virtualidad
+  if (
+    grupo.startsWith("vir") ||
+    grupo.startsWith("dv-") ||
+    grupo.startsWith("dv")
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 export function programaNoRequiereSalon(programa) {
   const programaNormalizado = normalizar(programa);
 
@@ -190,7 +220,7 @@ export function obtenerProblemasDatos(clase) {
     problemas.push("Grupo pendiente");
   }
 
-  if (!programaNoRequiereSalon(clase.programa) && !esValorValido(clase.salon)) {
+  if (!esClaseVirtual(clase) && !esValorValido(clase.salon)) {
     problemas.push("Salón pendiente");
   }
 
@@ -209,26 +239,16 @@ export function obtenerProblemasDatos(clase) {
  * Indica exactamente QUÉ se cruza
  * entre dos clases.
  */
-export function obtenerTiposCruce(claseA, claseB) {
-  if (!hayCruce(claseA, claseB)) {
-    return [];
+export function esMismoSalon(claseA, claseB) {
+  if (esClaseVirtual(claseA) || esClaseVirtual(claseB)) {
+    return false;
   }
 
-  const tipos = [];
-
-  if (esMismoProfesor(claseA, claseB)) {
-    tipos.push("profesor");
+  if (!esValorValido(claseA.salon) || !esValorValido(claseB.salon)) {
+    return false;
   }
 
-  if (esMismoGrupo(claseA, claseB)) {
-    tipos.push("grupo");
-  }
-
-  if (esMismoSalon(claseA, claseB)) {
-    tipos.push("salón");
-  }
-
-  return tipos;
+  return normalizar(claseA.salon) === normalizar(claseB.salon);
 }
 
 /*
