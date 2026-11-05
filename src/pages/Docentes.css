@@ -7,3 +7,79 @@
   color: #4b5563;
   line-height: 1.6;
 }
+
+.btn-excepcion {
+  border: none;
+  border-radius: 9px;
+  padding: 8px 12px;
+  background: #8b0000;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-excepcion:hover {
+  background: #a90000;
+}
+
+.modal-excepcion {
+  width: min(520px, 92vw);
+  background: white;
+  border-radius: 18px;
+  padding: 28px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+}
+
+.modal-excepcion h3 {
+  margin-top: 0;
+  color: #8b0000;
+  font-size: 24px;
+}
+
+.modal-excepcion-docente {
+  padding: 14px;
+  background: #f6f7f9;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+.check-excepcion {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+  font-weight: 700;
+}
+
+.excepcion-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.modal-excepcion input[type="number"],
+.modal-excepcion textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #d6dbe3;
+  border-radius: 9px;
+  padding: 11px;
+  margin-top: 6px;
+}
+
+.modal-excepcion textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.btn-guardar-excepcion {
+  border: none;
+  background: #8b0000;
+  color: white;
+  border-radius: 9px;
+  padding: 11px 18px;
+  font-weight: 700;
+  cursor: pointer;
+}

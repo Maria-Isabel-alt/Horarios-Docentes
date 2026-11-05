@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
 import { db } from "../Firebase/config";
 
 import Encabezado from "../components/Encabezado";
@@ -15,6 +15,17 @@ function Docentes({ clases = [] }) {
   const [docentesFirebase, setDocentesFirebase] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
+
+  const [docenteExcepcion, setDocenteExcepcion] = useState(null);
+
+  const [formExcepcion, setFormExcepcion] = useState({
+    activa: true,
+    minimo: 8,
+    maximo: 0,
+    motivo: "",
+  });
+
+  const [guardandoExcepcion, setGuardandoExcepcion] = useState(false);
 
   useEffect(() => {
     const cargarDocentes = async () => {
@@ -187,6 +198,90 @@ function Docentes({ clases = [] }) {
       );
   }, [clases, docentesFirebase]);
 
+  const abrirExcepcion = (docente) => {
+    const excepcion = docente.excepcionCarga;
+
+    setDocenteExcepcion(docente);
+
+    setFormExcepcion({
+      activa: excepcion?.activa ?? true,
+      minimo: excepcion?.minimo ?? docente.cargaMinimo ?? 8,
+      maximo: excepcion?.maximo ?? docente.cargaMaximo ?? 0,
+      motivo: excepcion?.motivo ?? "",
+    });
+  };
+
+  const cerrarExcepcion = () => {
+    setDocenteExcepcion(null);
+  };
+
+  const cambiarExcepcion = (e) => {
+    const { name, value, type, checked } = e.target;
+
+    setFormExcepcion((anterior) => ({
+      ...anterior,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const guardarExcepcion = async () => {
+    if (!docenteExcepcion) return;
+
+    if (docenteExcepcion.origen !== "firebase") {
+      alert(
+        "Este docente todavía no está registrado en el catálogo oficial de docentes.",
+      );
+      return;
+    }
+
+    const minimo = Number(formExcepcion.minimo);
+    const maximo = Number(formExcepcion.maximo);
+
+    if (
+      formExcepcion.activa &&
+      (Number.isNaN(minimo) || Number.isNaN(maximo) || maximo < minimo)
+    ) {
+      alert("Revisa el rango mínimo y máximo.");
+      return;
+    }
+
+    try {
+      setGuardandoExcepcion(true);
+
+      const referencia = doc(db, "docentes", docenteExcepcion.id);
+
+      const excepcionCarga = {
+        activa: formExcepcion.activa,
+        minimo,
+        maximo,
+        motivo: formExcepcion.motivo.trim(),
+      };
+
+      await updateDoc(referencia, {
+        excepcionCarga,
+      });
+
+      setDocentesFirebase((anteriores) =>
+        anteriores.map((docente) =>
+          docente.id === docenteExcepcion.id
+            ? {
+                ...docente,
+                excepcionCarga,
+              }
+            : docente,
+        ),
+      );
+
+      setDocenteExcepcion(null);
+    } catch (error) {
+      console.error("Error guardando excepción:", error);
+
+      alert("No se pudo guardar la excepción.");
+    } finally {
+      setGuardandoExcepcion(false);
+    }
+  };
+
   return (
     <>
       <Encabezado
@@ -222,6 +317,7 @@ function Docentes({ clases = [] }) {
                   <th>Horas</th>
                   <th>Rango permitido</th>
                   <th>Estado</th>
+                  <th>Acción</th>
                 </tr>
               </thead>
 
@@ -253,6 +349,18 @@ function Docentes({ clases = [] }) {
                     </td>
 
                     <td>
+                      <button
+                        type="button"
+                        className="btn-excepcion"
+                        onClick={() => abrirExcepcion(docente)}
+                      >
+                        {docente.usaExcepcion
+                          ? "Editar excepción"
+                          : "Configurar excepción"}
+                      </button>
+                    </td>
+
+                    <td>
                       {docente.cargaEstado === "correcta" && (
                         <span className="estado-carga correcta">
                           ✓{" "}
@@ -280,6 +388,18 @@ function Docentes({ clases = [] }) {
                         </span>
                       )}
                     </td>
+
+                    <td>
+                      <button
+                        type="button"
+                        className="btn-excepcion"
+                        onClick={() => abrirExcepcion(docente)}
+                      >
+                        {docente.usaExcepcion
+                          ? "Editar excepción"
+                          : "Configurar excepción"}
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -287,6 +407,87 @@ function Docentes({ clases = [] }) {
           </div>
         )}
       </section>
+      {docenteExcepcion && (
+        <div className="modal-fondo">
+          <div className="modal-excepcion">
+            <h3>Configurar excepción de carga</h3>
+
+            <p className="modal-excepcion-docente">
+              <strong>{docenteExcepcion.nombre}</strong>
+              <br />
+              Contrato: {docenteExcepcion.contrato}
+              <br />
+              Carga actual: {docenteExcepcion.horas} h
+            </p>
+
+            <label className="check-excepcion">
+              <input
+                type="checkbox"
+                name="activa"
+                checked={formExcepcion.activa}
+                onChange={cambiarExcepcion}
+              />
+              Excepción activa
+            </label>
+
+            <div className="excepcion-grid">
+              <div>
+                <label>Horas mínimas</label>
+                <input
+                  type="number"
+                  name="minimo"
+                  min="0"
+                  value={formExcepcion.minimo}
+                  onChange={cambiarExcepcion}
+                  disabled={!formExcepcion.activa}
+                />
+              </div>
+
+              <div>
+                <label>Horas máximas</label>
+                <input
+                  type="number"
+                  name="maximo"
+                  min="0"
+                  value={formExcepcion.maximo}
+                  onChange={cambiarExcepcion}
+                  disabled={!formExcepcion.activa}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label>Motivo / autorización</label>
+              <textarea
+                name="motivo"
+                value={formExcepcion.motivo}
+                onChange={cambiarExcepcion}
+                placeholder="Ej: Autorización de Dirección Académica"
+                disabled={!formExcepcion.activa}
+              />
+            </div>
+
+            <div className="modal-botones">
+              <button
+                type="button"
+                className="btn-cancelar-modal"
+                onClick={cerrarExcepcion}
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                className="btn-guardar-excepcion"
+                onClick={guardarExcepcion}
+                disabled={guardandoExcepcion}
+              >
+                {guardandoExcepcion ? "Guardando..." : "Guardar excepción"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
