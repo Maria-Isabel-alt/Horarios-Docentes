@@ -51,19 +51,6 @@ export function esClaseVirtual(clase) {
   return false;
 }
 
-export function programaNoRequiereSalon(programa) {
-  const programaNormalizado = normalizar(programa);
-
-  return [
-    "derecho virtual",
-    "ciencia politica virtual",
-
-    // En tu Excel también aparece simplemente como CIENCIA POLITICA.
-    // Si ese programa corresponde al virtual, lo dejamos incluido.
-    "ciencia politica",
-  ].includes(programaNormalizado);
-}
-
 export function horaAMinutos(valor) {
   if (!valor) return null;
 
@@ -165,26 +152,6 @@ export function esMismoGrupo(claseA, claseB) {
   return normalizar(claseA.grupo) === normalizar(claseB.grupo);
 }
 
-export function esMismoSalon(claseA, claseB) {
-  // Los programas virtuales no utilizan salón
-  if (
-    programaNoRequiereSalon(claseA.programa) ||
-    programaNoRequiereSalon(claseB.programa)
-  ) {
-    return false;
-  }
-
-  if (!esValorValido(claseA.salon) || !esValorValido(claseB.salon)) {
-    return false;
-  }
-
-  return normalizar(claseA.salon) === normalizar(claseB.salon);
-}
-
-/*
- * Problemas propios de UNA clase.
- * No necesitan compararse contra otra.
- */
 export function obtenerProblemasDatos(clase) {
   const problemas = [];
 
@@ -235,10 +202,6 @@ export function obtenerProblemasDatos(clase) {
   return problemas;
 }
 
-/*
- * Indica exactamente QUÉ se cruza
- * entre dos clases.
- */
 export function esMismoSalon(claseA, claseB) {
   if (esClaseVirtual(claseA) || esClaseVirtual(claseB)) {
     return false;
@@ -251,10 +214,28 @@ export function esMismoSalon(claseA, claseB) {
   return normalizar(claseA.salon) === normalizar(claseB.salon);
 }
 
-/*
- * Devuelve con cuáles clases choca
- * una clase concreta.
- */
+export function obtenerTiposCruce(claseA, claseB) {
+  if (!hayCruce(claseA, claseB)) {
+    return [];
+  }
+
+  const tipos = [];
+
+  if (esMismoProfesor(claseA, claseB)) {
+    tipos.push("profesor");
+  }
+
+  if (esMismoGrupo(claseA, claseB)) {
+    tipos.push("grupo");
+  }
+
+  if (esMismoSalon(claseA, claseB)) {
+    tipos.push("salón");
+  }
+
+  return tipos;
+}
+
 export function obtenerCrucesDeClase(claseActual, clases) {
   return clases
     .filter((otraClase) => otraClase.id !== claseActual.id)

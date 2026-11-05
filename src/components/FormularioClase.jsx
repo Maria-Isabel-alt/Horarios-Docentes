@@ -22,6 +22,7 @@ const estadoInicial = {
   horaInicio: "",
   horaFin: "",
   grupo: "",
+  matriculados: "",
   salon: "",
   programa: "",
   jornada: "",
@@ -82,6 +83,7 @@ function FormularioClase({
         horaInicio: claseEnEdicion.horaInicio || "",
         horaFin: claseEnEdicion.horaFin || "",
         grupo: claseEnEdicion.grupo || "",
+        matriculados: claseEnEdicion.matriculados ?? "",
         salon: claseEnEdicion.salon || "",
         programa: claseEnEdicion.programa || "",
         jornada: claseEnEdicion.jornada || "",
@@ -533,6 +535,18 @@ function FormularioClase({
             value={formulario.grupo}
             onChange={cambiarDato}
             placeholder="Ej: EJM-1"
+          />
+        </div>
+
+        <div className="campo">
+          <label>Matriculados</label>
+          <input
+            type="number"
+            name="matriculados"
+            value={formulario.matriculados}
+            onChange={cambiarDato}
+            placeholder="Ej: 40"
+            min="0"
           />
         </div>
 

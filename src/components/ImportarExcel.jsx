@@ -224,6 +224,8 @@ function ImportarExcel({ onAgregarClase, onEliminarClase, clases = [] }) {
       programa: String(filaNormalizada["PROGRAMA"] || "").trim(),
 
       jornada: String(filaNormalizada["JORNADA"] || "").trim(),
+
+      matriculados: Number(filaNormalizada["MATRICULADOS"] || 0),
     };
   };
 
@@ -358,6 +360,7 @@ function ImportarExcel({ onAgregarClase, onEliminarClase, clases = [] }) {
           horaInicio: registro.horaInicio || "",
           horaFin: registro.horaFin || "",
           grupo: registro.grupo || "",
+          matriculados: registro.matriculados || 0,
           salon: registro.salon || "",
           programa: registro.programa || "",
           jornada: registro.jornada || "",
@@ -615,6 +618,7 @@ function ImportarExcel({ onAgregarClase, onEliminarClase, clases = [] }) {
                   <th>Hora inicio</th>
                   <th>Hora fin</th>
                   <th>Grupo</th>
+                  <th>Matriculados</th>
                   <th>Salón</th>
                   <th>Programa</th>
                   <th>Jornada</th>
@@ -642,6 +646,8 @@ function ImportarExcel({ onAgregarClase, onEliminarClase, clases = [] }) {
                     <td>{registro.horaFin}</td>
 
                     <td>{registro.grupo}</td>
+
+                    <td>{registro.matriculados || 0}</td>
 
                     <td>{registro.salon || "Sin asignar"}</td>
 

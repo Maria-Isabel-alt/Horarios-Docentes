@@ -3,6 +3,12 @@ import { collection, getDocs } from "firebase/firestore";
 import { db } from "../Firebase/config";
 
 import Encabezado from "../components/Encabezado";
+
+import {
+  obtenerCargaDocente,
+  evaluarCargaDocente,
+} from "../utils/cargaDocente";
+
 import "./Docentes.css";
 
 function Docentes({ clases = [] }) {
@@ -44,7 +50,7 @@ function Docentes({ clases = [] }) {
       const cedula = normalizar(clase.cedula);
       const profesor = normalizar(clase.profesor);
 
-      // Ignoramos registros sin identificación útil
+      // Ignorar registros que no tengan una cédula válida
       if (
         !cedula ||
         cedula.toLowerCase() === "na" ||
@@ -60,8 +66,10 @@ function Docentes({ clases = [] }) {
           cedula,
           contrato: normalizar(clase.contrato) || "Sin dato",
           programas: new Set(),
+          cursos: new Set(),
           totalClases: 0,
           origen: "clases",
+          excepcionCarga: null,
         });
       }
 
@@ -69,11 +77,25 @@ function Docentes({ clases = [] }) {
 
       docente.totalClases += 1;
 
+      /*
+       * Guardamos cursos únicos.
+       * Una misma asignatura/grupo/programa cuenta como un curso.
+       */
+      const identificadorCurso = [
+        normalizar(clase.codigo || clase.asignatura),
+        normalizar(clase.grupo),
+        normalizar(clase.programa),
+      ].join("|");
+
+      if (identificadorCurso.replace(/\|/g, "")) {
+        docente.cursos.add(identificadorCurso);
+      }
+
       if (clase.programa) {
         docente.programas.add(normalizar(clase.programa));
       }
 
-      // Si inicialmente estaba vacío, aprovechar datos de otra clase
+      // Aprovechar datos encontrados en otras clases
       if (docente.nombre === "Sin nombre" && profesor) {
         docente.nombre = profesor;
       }
@@ -84,7 +106,7 @@ function Docentes({ clases = [] }) {
     });
 
     /*
-     * 2. DOCENTES REGISTRADOS DIRECTAMENTE EN FIREBASE
+     * 2. DOCENTES REGISTRADOS EN FIREBASE
      */
     docentesFirebase.forEach((docenteFirebase) => {
       const cedula = normalizar(docenteFirebase.cedula);
@@ -107,6 +129,9 @@ function Docentes({ clases = [] }) {
           docenteExistente.contrato = docenteFirebase.contrato;
         }
 
+        docenteExistente.excepcionCarga =
+          docenteFirebase.excepcionCarga || null;
+
         docenteExistente.origen = "firebase";
         docenteExistente.id = docenteFirebase.id;
       } else {
@@ -116,20 +141,45 @@ function Docentes({ clases = [] }) {
           cedula,
           contrato: docenteFirebase.contrato || "Sin dato",
           programas: new Set(),
+          cursos: new Set(),
           totalClases: 0,
           origen: "firebase",
+          excepcionCarga: docenteFirebase.excepcionCarga || null,
         });
       }
     });
 
+    /*
+     * 3. CALCULAR CARGA ACADÉMICA
+     */
     return Array.from(mapa.values())
-      .map((docente) => ({
-        ...docente,
-        programasTexto:
-          docente.programas.size > 0
-            ? Array.from(docente.programas).join(", ")
-            : "Sin clases asignadas",
-      }))
+      .map((docente) => {
+        const horas = obtenerCargaDocente(docente.cedula, clases);
+
+        const evaluacion = evaluarCargaDocente(
+          docente.contrato,
+          horas,
+          docente.excepcionCarga,
+        );
+        return {
+          ...docente,
+
+          programasTexto:
+            docente.programas.size > 0
+              ? Array.from(docente.programas).join(", ")
+              : "Sin clases asignadas",
+
+          totalCursos: docente.cursos.size,
+
+          horas,
+
+          cargaEstado: evaluacion.estado,
+          cargaMensaje: evaluacion.mensaje,
+          cargaMinimo: evaluacion.minimo,
+          cargaMaximo: evaluacion.maximo,
+          usaExcepcion: evaluacion.usaExcepcion,
+        };
+      })
       .sort((a, b) =>
         a.nombre.localeCompare(b.nombre, "es", {
           sensitivity: "base",
@@ -141,7 +191,7 @@ function Docentes({ clases = [] }) {
     <>
       <Encabezado
         titulo="Docentes"
-        texto="Catálogo de docentes disponibles para la programación académica."
+        texto="Consulta la carga académica, cursos y programas asignados a cada docente."
       />
 
       <section className="panel">
@@ -168,7 +218,10 @@ function Docentes({ clases = [] }) {
                   <th>Cédula</th>
                   <th>Contrato</th>
                   <th>Programa(s)</th>
-                  <th>Total clases</th>
+                  <th>Cursos</th>
+                  <th>Horas</th>
+                  <th>Rango permitido</th>
+                  <th>Estado</th>
                 </tr>
               </thead>
 
@@ -183,7 +236,50 @@ function Docentes({ clases = [] }) {
 
                     <td>{docente.programasTexto}</td>
 
-                    <td>{docente.totalClases}</td>
+                    <td>{docente.totalCursos}</td>
+
+                    <td>
+                      {Number.isInteger(docente.horas)
+                        ? docente.horas
+                        : docente.horas.toFixed(1)}{" "}
+                      h
+                    </td>
+
+                    <td>
+                      {docente.cargaMinimo !== null &&
+                      docente.cargaMaximo !== null
+                        ? `${docente.cargaMinimo} - ${docente.cargaMaximo} h`
+                        : "Sin configurar"}
+                    </td>
+
+                    <td>
+                      {docente.cargaEstado === "correcta" && (
+                        <span className="estado-carga correcta">
+                          ✓{" "}
+                          {docente.usaExcepcion
+                            ? "Correcta · Excepción"
+                            : "Correcta"}
+                        </span>
+                      )}
+
+                      {docente.cargaEstado === "baja" && (
+                        <span className="estado-carga baja">
+                          ⚠ {docente.cargaMensaje}
+                        </span>
+                      )}
+
+                      {docente.cargaEstado === "excedida" && (
+                        <span className="estado-carga excedida">
+                          ✕ {docente.cargaMensaje}
+                        </span>
+                      )}
+
+                      {docente.cargaEstado === "sin-configurar" && (
+                        <span className="estado-carga sin-configurar">
+                          {docente.cargaMensaje}
+                        </span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
