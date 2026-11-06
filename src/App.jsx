@@ -13,6 +13,8 @@ import ClasesRegistradas from "./pages/ClasesRegistradas";
 import { auth } from "./Firebase/config";
 import { obtenerConflictos } from "./utils/horarios";
 
+import Disponibilidad from "./pages/Disponibilidad";
+
 import {
   escucharClasesDelUsuario,
   agregarClaseFirestore,
@@ -99,10 +101,10 @@ function App() {
     { id: "clases", texto: "Clases registradas" },
     { id: "alertas", texto: "Alertas" },
     { id: "docentes", texto: "Docentes" },
+    { id: "disponibilidad", texto: "Disponibilidad" },
     { id: "grupos", texto: "Grupos" },
     { id: "asignaturas", texto: "Asignaturas" },
   ];
-
   if (cargando) {
     return <div className="pantalla-carga">Cargando...</div>;
   }
@@ -141,6 +143,10 @@ function App() {
 
       <main className="contenido">
         {pestanaActiva === "docentes" && <Docentes clases={clases} />}
+
+        {pestanaActiva === "disponibilidad" && (
+          <Disponibilidad clases={clases} />
+        )}
 
         {pestanaActiva === "grupos" && <Grupos clases={clases} />}
 
