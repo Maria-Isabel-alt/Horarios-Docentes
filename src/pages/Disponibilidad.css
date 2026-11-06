@@ -1,0 +1,73 @@
+.lista-docentes-disponibilidad {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.lista-docentes-disponibilidad button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #e1e4e8;
+  border-radius: 10px;
+  background: #ffffff;
+  cursor: pointer;
+  text-align: left;
+}
+
+.lista-docentes-disponibilidad button:hover {
+  background: #f7f7f7;
+}
+
+.lista-docentes-disponibilidad strong {
+  font-size: 15px;
+  color: #111827;
+}
+
+.lista-docentes-disponibilidad span {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.franjas-disponibilidad {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.franja-disponibilidad {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr auto 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 14px;
+  background: #f8f9fb;
+  border-radius: 10px;
+}
+
+.franja-disponibilidad select,
+.franja-disponibilidad input {
+  padding: 10px;
+  border: 1px solid #d9dde3;
+  border-radius: 8px;
+  background: white;
+}
+
+.franja-disponibilidad button {
+  border: none;
+  background: #fde8e8;
+  color: #b42318;
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.franja-disponibilidad button:hover {
+  background: #fbd5d5;
+}
