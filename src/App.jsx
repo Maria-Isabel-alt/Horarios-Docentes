@@ -15,6 +15,8 @@ import { obtenerConflictos } from "./utils/horarios";
 
 import Disponibilidad from "./pages/Disponibilidad";
 
+import AreasDerecho from "./pages/AreasDerecho";
+
 import {
   escucharClasesDelUsuario,
   agregarClaseFirestore,
@@ -104,6 +106,7 @@ function App() {
     { id: "disponibilidad", texto: "Disponibilidad" },
     { id: "grupos", texto: "Grupos" },
     { id: "asignaturas", texto: "Asignaturas" },
+    { id: "areas", texto: "Áreas del Derecho" },
   ];
   if (cargando) {
     return <div className="pantalla-carga">Cargando...</div>;
@@ -147,6 +150,8 @@ function App() {
         {pestanaActiva === "disponibilidad" && (
           <Disponibilidad clases={clases} />
         )}
+
+        {pestanaActiva === "areas" && <AreasDerecho clases={clases} />}
 
         {pestanaActiva === "grupos" && <Grupos clases={clases} />}
 

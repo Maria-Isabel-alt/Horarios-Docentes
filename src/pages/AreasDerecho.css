@@ -1,0 +1,62 @@
+.tarjeta-area {
+  padding: 20px;
+  margin-top: 16px;
+  border: 1px solid #e2e5ea;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.encabezado-area {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.encabezado-area h3 {
+  margin: 0 0 6px;
+  font-size: 20px;
+}
+
+.encabezado-area p {
+  margin: 0;
+  color: #6b7280;
+}
+
+.acciones-area {
+  display: flex;
+  gap: 8px;
+}
+
+.boton-editar-area,
+.boton-eliminar-area {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.boton-editar-area {
+  background: #eef1f5;
+  color: #333;
+}
+
+.boton-eliminar-area {
+  background: #fde8e8;
+  color: #b42318;
+}
+
+.docentes-area {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.docente-area {
+  background: #f2f4f7;
+  border-radius: 20px;
+  padding: 7px 11px;
+  font-size: 13px;
+}

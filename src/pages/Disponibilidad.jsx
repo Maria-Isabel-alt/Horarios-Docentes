@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { collection, getDocs } from "firebase/firestore";
 
+import { db } from "../Firebase/config";
 import Encabezado from "../components/Encabezado";
 
 import {
@@ -13,6 +15,8 @@ const dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
 function Disponibilidad({ clases = [] }) {
   const [disponibilidades, setDisponibilidades] = useState([]);
+  const [docentesFirebase, setDocentesFirebase] = useState([]);
+
   const [docenteSeleccionado, setDocenteSeleccionado] = useState(null);
 
   const [busqueda, setBusqueda] = useState("");
@@ -21,38 +25,103 @@ function Disponibilidad({ clases = [] }) {
 
   const [franjas, setFranjas] = useState([]);
 
+  /*
+   * CARGAR DISPONIBILIDADES Y CATÁLOGO DE DOCENTES
+   */
   useEffect(() => {
-    const cargar = async () => {
+    const cargarDatos = async () => {
       try {
-        const datos = await obtenerDisponibilidades();
-        setDisponibilidades(datos);
+        setCargando(true);
+
+        const [datosDisponibilidad, resultadoDocentes] = await Promise.all([
+          obtenerDisponibilidades(),
+          getDocs(collection(db, "docentes")),
+        ]);
+
+        setDisponibilidades(datosDisponibilidad);
+
+        const listaDocentes = resultadoDocentes.docs.map((documento) => ({
+          id: documento.id,
+          ...documento.data(),
+        }));
+
+        setDocentesFirebase(listaDocentes);
       } catch (error) {
-        console.error(error);
-        setMensaje("No se pudieron cargar las disponibilidades.");
+        console.error("Error cargando disponibilidad:", error);
+
+        setMensaje(
+          "❌ No se pudieron cargar los datos del Banco de Disponibilidad.",
+        );
       } finally {
         setCargando(false);
       }
     };
 
-    cargar();
+    cargarDatos();
   }, []);
 
+  /*
+   * UNIR DOCENTES DE FIREBASE + DOCENTES ENCONTRADOS EN CLASES
+   */
   const docentes = useMemo(() => {
     const mapa = new Map();
 
+    /*
+     * 1. Docentes del catálogo oficial
+     */
+    docentesFirebase.forEach((docente) => {
+      const cedula = String(docente.cedula || "").trim();
+
+      if (!cedula) return;
+
+      const nombre =
+        `${docente.nombres || ""} ${docente.apellidos || ""}`.trim();
+
+      mapa.set(cedula, {
+        id: docente.id,
+        cedula,
+        nombre: nombre || "Sin nombre",
+        contrato: docente.contrato || "Sin dato",
+        origen: "firebase",
+      });
+    });
+
+    /*
+     * 2. Docentes encontrados en clases
+     */
     clases.forEach((clase) => {
       const cedula = String(clase.cedula || "").trim();
       const profesor = String(clase.profesor || "").trim();
 
-      if (!cedula || !profesor) return;
-
-      if (!mapa.has(cedula)) {
-        mapa.set(cedula, {
-          cedula,
-          nombre: profesor,
-          contrato: clase.contrato || "Sin dato",
-        });
+      if (
+        !cedula ||
+        cedula.toLowerCase() === "na" ||
+        cedula.toLowerCase() === "n/a"
+      ) {
+        return;
       }
+
+      if (mapa.has(cedula)) {
+        const docente = mapa.get(cedula);
+
+        if (docente.contrato === "Sin dato" && clase.contrato) {
+          docente.contrato = clase.contrato;
+        }
+
+        if (docente.nombre === "Sin nombre" && profesor) {
+          docente.nombre = profesor;
+        }
+
+        return;
+      }
+
+      mapa.set(cedula, {
+        id: `clase-${cedula}`,
+        cedula,
+        nombre: profesor || "Sin nombre",
+        contrato: clase.contrato || "Sin dato",
+        origen: "clases",
+      });
     });
 
     return Array.from(mapa.values()).sort((a, b) =>
@@ -60,14 +129,31 @@ function Disponibilidad({ clases = [] }) {
         sensitivity: "base",
       }),
     );
-  }, [clases]);
+  }, [clases, docentesFirebase]);
 
-  const docentesFiltrados = docentes.filter((docente) => {
-    const texto = `${docente.nombre} ${docente.cedula}`.toLowerCase();
+  /*
+   * BUSCADOR
+   */
+  const docentesFiltrados = useMemo(() => {
+    const textoBusqueda = busqueda.trim().toLowerCase();
 
-    return texto.includes(busqueda.toLowerCase());
-  });
+    if (!textoBusqueda) {
+      return docentes.slice(0, 10);
+    }
 
+    return docentes
+      .filter((docente) => {
+        const texto =
+          `${docente.nombre} ${docente.cedula} ${docente.contrato}`.toLowerCase();
+
+        return texto.includes(textoBusqueda);
+      })
+      .slice(0, 10);
+  }, [docentes, busqueda]);
+
+  /*
+   * SELECCIONAR DOCENTE
+   */
   const seleccionarDocente = (docente) => {
     setDocenteSeleccionado(docente);
 
@@ -76,9 +162,13 @@ function Disponibilidad({ clases = [] }) {
     );
 
     setFranjas(disponibilidadExistente?.franjas || []);
+
     setMensaje("");
   };
 
+  /*
+   * AGREGAR FRANJA
+   */
   const agregarFranja = () => {
     setFranjas((anteriores) => [
       ...anteriores,
@@ -90,6 +180,9 @@ function Disponibilidad({ clases = [] }) {
     ]);
   };
 
+  /*
+   * MODIFICAR FRANJA
+   */
   const cambiarFranja = (indice, campo, valor) => {
     setFranjas((anteriores) =>
       anteriores.map((franja, i) =>
@@ -103,14 +196,59 @@ function Disponibilidad({ clases = [] }) {
     );
   };
 
+  /*
+   * ELIMINAR FRANJA
+   */
   const eliminarFranja = (indice) => {
     setFranjas((anteriores) => anteriores.filter((_, i) => i !== indice));
   };
 
+  /*
+   * GUARDAR
+   */
   const guardar = async () => {
     if (!docenteSeleccionado) {
-      setMensaje("Selecciona un docente.");
+      setMensaje("⚠ Selecciona un docente.");
       return;
+    }
+
+    if (franjas.length === 0) {
+      setMensaje("⚠ Debes agregar al menos una franja de disponibilidad.");
+      return;
+    }
+
+    /*
+     * Validar horas
+     */
+    const franjaInvalida = franjas.find(
+      (franja) => !franja.inicio || !franja.fin || franja.fin <= franja.inicio,
+    );
+
+    if (franjaInvalida) {
+      setMensaje("⚠ La hora final debe ser mayor que la hora inicial.");
+      return;
+    }
+
+    for (let i = 0; i < franjas.length; i++) {
+      for (let j = i + 1; j < franjas.length; j++) {
+        const franjaA = franjas[i];
+        const franjaB = franjas[j];
+
+        if (franjaA.dia !== franjaB.dia) {
+          continue;
+        }
+
+        const hayCruce =
+          franjaA.inicio < franjaB.fin && franjaB.inicio < franjaA.fin;
+
+        if (hayCruce) {
+          setMensaje(
+            `⚠ Hay horarios de disponibilidad que se cruzan el ${franjaA.dia}.`,
+          );
+
+          return;
+        }
+      }
     }
 
     try {
@@ -120,17 +258,17 @@ function Disponibilidad({ clases = [] }) {
         franjas,
       });
 
+      const nuevoRegistro = {
+        cedula: docenteSeleccionado.cedula,
+        docente: docenteSeleccionado.nombre,
+        contrato: docenteSeleccionado.contrato,
+        franjas,
+      };
+
       setDisponibilidades((anteriores) => {
         const existe = anteriores.some(
           (item) => String(item.cedula) === String(docenteSeleccionado.cedula),
         );
-
-        const nuevoRegistro = {
-          cedula: docenteSeleccionado.cedula,
-          docente: docenteSeleccionado.nombre,
-          contrato: docenteSeleccionado.contrato,
-          franjas,
-        };
 
         if (existe) {
           return anteriores.map((item) =>
@@ -143,10 +281,11 @@ function Disponibilidad({ clases = [] }) {
         return [...anteriores, nuevoRegistro];
       });
 
-      setMensaje("✅ Disponibilidad guardada.");
+      setMensaje("✅ Disponibilidad guardada correctamente.");
     } catch (error) {
-      console.error(error);
-      setMensaje("❌ No se pudo guardar.");
+      console.error("Error guardando disponibilidad:", error);
+
+      setMensaje("❌ No se pudo guardar la disponibilidad.");
     }
   };
 
@@ -161,6 +300,7 @@ function Disponibilidad({ clases = [] }) {
         <h2>Seleccionar docente</h2>
 
         <input
+          className="buscador-disponibilidad"
           type="text"
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
@@ -168,16 +308,21 @@ function Disponibilidad({ clases = [] }) {
         />
 
         {cargando ? (
-          <p>Cargando...</p>
+          <p className="vacio">Cargando docentes...</p>
+        ) : docentes.length === 0 ? (
+          <p className="vacio">No se encontraron docentes registrados.</p>
+        ) : docentesFiltrados.length === 0 ? (
+          <p className="vacio">No se encontraron docentes con esa búsqueda.</p>
         ) : (
           <div className="lista-docentes-disponibilidad">
-            {docentesFiltrados.slice(0, 10).map((docente) => (
+            {docentesFiltrados.map((docente) => (
               <button
                 type="button"
                 key={docente.cedula}
                 onClick={() => seleccionarDocente(docente)}
               >
                 <strong>{docente.nombre}</strong>
+
                 <span>
                   C.C. {docente.cedula} · {docente.contrato}
                 </span>
@@ -189,11 +334,22 @@ function Disponibilidad({ clases = [] }) {
 
       {docenteSeleccionado && (
         <section className="panel">
-          <h2>{docenteSeleccionado.nombre}</h2>
+          <div className="encabezado-disponibilidad-docente">
+            <div>
+              <h2>{docenteSeleccionado.nombre}</h2>
 
-          <p>
-            C.C. {docenteSeleccionado.cedula} · {docenteSeleccionado.contrato}
-          </p>
+              <p>
+                C.C. {docenteSeleccionado.cedula} ·{" "}
+                {docenteSeleccionado.contrato}
+              </p>
+            </div>
+          </div>
+
+          {franjas.length === 0 && (
+            <p className="vacio">
+              Este docente todavía no tiene disponibilidad registrada.
+            </p>
+          )}
 
           <div className="franjas-disponibilidad">
             {franjas.map((franja, indice) => (
@@ -232,15 +388,25 @@ function Disponibilidad({ clases = [] }) {
             ))}
           </div>
 
-          <button type="button" onClick={agregarFranja}>
-            + Agregar franja
-          </button>
+          <div className="acciones-disponibilidad">
+            <button
+              type="button"
+              className="boton-agregar-franja"
+              onClick={agregarFranja}
+            >
+              + Agregar franja
+            </button>
 
-          <button type="button" onClick={guardar}>
-            Guardar disponibilidad
-          </button>
+            <button
+              type="button"
+              className="boton-guardar-disponibilidad"
+              onClick={guardar}
+            >
+              Guardar disponibilidad
+            </button>
+          </div>
 
-          {mensaje && <p>{mensaje}</p>}
+          {mensaje && <div className="mensaje-disponibilidad">{mensaje}</div>}
         </section>
       )}
     </>
